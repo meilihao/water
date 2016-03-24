@@ -81,6 +81,10 @@ There are already some middlewares to simplify your work:
 - logger
 - recovery
 
+## Getting Help
+
+- [API Reference](https://gowalker.org/github.com/meilihao/water)
+
 ## License
 
 This project is under BSD License.
