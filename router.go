@@ -112,8 +112,8 @@ func (r *Router) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 
 	index := methodIndex(req.Method)
 	if index < 0 {
-		r.log(http.StatusBadRequest, req)
-		rw.WriteHeader(http.StatusBadRequest)
+		r.log(http.StatusMethodNotAllowed, req)
+		rw.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}
 

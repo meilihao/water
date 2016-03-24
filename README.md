@@ -20,7 +20,8 @@ package main
 import (
 	"fmt"
 	"log"
-	"water"
+
+	"github.com/meilihao/water"
 )
 
 func main() {
@@ -31,20 +32,22 @@ func main() {
 	router.Any("/about", test)
 
 	router.Group("/a", func(g *water.Group) {
-		g.Before(test)
+		g.Before(middleware)
 
 		g.Get("/1", test)
-		g.Get("/<id:int>", test)
+		g.Get("/<id:int>", test2)
 		g.Group("/b", func(g *water.Group) {
 			g.Get("", test)
 			g.Any("/2", test)
-			g.Get("/<size ~ 70|80>", test)
+			g.Get("/<id ~ 70|80>", test2)
 			g.Get("/*", test)
 		})
 	})
 
 	router.PrintRoutes("GET")
-	fmt.Println("///////")
+
+	fmt.Println("---###---")
+
 	router.PrintTree("GET")
 
 	if err := router.ListenAndServe(":8080"); err != nil {
@@ -52,8 +55,20 @@ func main() {
 	}
 }
 
+func middleware(ctx *water.Context) {
+	fmt.Println("1")
+
+	ctx.Next()
+
+	fmt.Println("2")
+}
+
 func test(ctx *water.Context) {
 	ctx.WriteString(ctx.Req.RequestURI)
+}
+
+func test2(ctx *water.Context) {
+	ctx.WriteJson(ctx.Params.MustInt("id"))
 }
 ```
 
@@ -65,6 +80,10 @@ There are already some middlewares to simplify your work:
 
 - logger
 - recovery
+
+## Getting Help
+
+- [API Reference](https://gowalker.org/github.com/meilihao/water)
 
 ## License
 

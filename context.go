@@ -22,9 +22,38 @@ func (ctx *Context) Found(uri string) {
 	http.Redirect(ctx, ctx.Req, uri, http.StatusFound)
 }
 
-//304
+// 304
 func (ctx *Context) NotModified() {
-	ctx.WriteHeader(http.StatusNotModified)
+	ctx.Abort(http.StatusNotModified)
+}
+
+// 400
+func (ctx *Context) BadRequest() {
+	ctx.Abort(http.StatusBadRequest)
+}
+
+// 401
+func (ctx *Context) Unauthorized() {
+	ctx.Abort(http.StatusUnauthorized)
+}
+
+// 403
+func (ctx *Context) Forbidden() {
+	ctx.Abort(http.StatusForbidden)
+}
+
+// 404
+func (ctx *Context) NotFound() {
+	ctx.Abort(http.StatusNotFound)
+}
+
+// 500
+func (ctx *Context) InternalServerError() {
+	ctx.Abort(http.StatusInternalServerError)
+}
+
+func (ctx *Context) Abort(code int) {
+	ctx.WriteHeader(code)
 }
 
 // http://stackoverflow.com/questions/49547/making-sure-a-web-page-is-not-cached-across-all-browsers
