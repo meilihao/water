@@ -27,9 +27,7 @@ func Recovery() HandlerFunc {
 					ctx.WriteHeader(http.StatusInternalServerError)
 				}
 
-				if !LogClose {
-					ctx.router.logger.Printf("panic : %v\n", content)
-				}
+				ctx.router.logger.Printf("panic : %v\n", content)
 
 				if Status != Stable {
 					ctx.WriteString(content)
