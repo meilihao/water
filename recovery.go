@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"runtime"
+	"time"
 )
 
 func Recovery() HandlerFunc {
@@ -27,7 +28,7 @@ func Recovery() HandlerFunc {
 					ctx.WriteHeader(http.StatusInternalServerError)
 				}
 
-				ctx.router.logger.Printf("panic : %v\n", content)
+				ctx.router.logger.Printf("panic %s : %s\n", time.Now().Format(LogTimeFormat), content)
 
 				if Status != Stable {
 					ctx.WriteString(content)
