@@ -172,3 +172,7 @@ func (ctx *Context) DecodeXml(v interface{}) error {
 
 	return xml.NewDecoder(ctx.Req.Body).Decode(v)
 }
+
+func (ctx *Context) ErrorJson(v string) {
+	ctx.WriteJson(map[string]string{"Error": v})
+}
