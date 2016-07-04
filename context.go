@@ -176,3 +176,7 @@ func (ctx *Context) DecodeXml(v interface{}) error {
 func (ctx *Context) ErrorJson(v string) {
 	ctx.WriteJson(map[string]string{"Error": v})
 }
+
+func (ctx *Context) IdJson(v interface{}) {
+	ctx.WriteJson(map[string]interface{}{"Id": v})
+}
