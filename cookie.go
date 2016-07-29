@@ -5,6 +5,7 @@ import (
 	"html/template"
 	"net/http"
 	"strconv"
+	"time"
 )
 
 func (ctx *Context) Cookie(name string) string {
@@ -63,6 +64,11 @@ func (ctx *Context) SetCookie(name string, value string, others ...interface{}) 
 			cookie.MaxAge = int(v)
 		case int64:
 			cookie.MaxAge = int(v)
+		}
+
+		// for ie
+		if cookie.MaxAge > 0 {
+			cookie.Expires = time.Now().Add(time.Duration(cookie.MaxAge) * time.Second)
 		}
 	}
 
