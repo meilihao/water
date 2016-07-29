@@ -67,8 +67,12 @@ func (ctx *Context) SetCookie(name string, value string, others ...interface{}) 
 		}
 
 		// for ie
-		if cookie.MaxAge > 0 {
+		// [Cookie Test Demo: max-age vs expires](http://mrcoles.com/media/test/cookies-max-age-vs-expires.html)
+		switch {
+		case cookie.MaxAge > 0:
 			cookie.Expires = time.Now().Add(time.Duration(cookie.MaxAge) * time.Second)
+		case cookie.MaxAge < 0:
+			cookie.Expires = time.Now().AddDate(0, 0, -1)
 		}
 	}
 
