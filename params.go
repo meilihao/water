@@ -4,16 +4,27 @@ import (
 	"strconv"
 )
 
-type Params map[string]string
+// Param is a single URL parameter, consisting of a key and a value.
+type Param struct {
+	Name  string
+	Value string
+}
+
+// Params is a Param-slice, as returned by the router.
+// The slice is ordered, the first URL parameter is also the first slice value.
+// It is therefore safe to read values by the index.
+type Params []Param
 
 // String returns value by given param name.
 // panic if param not exits
 func (p Params) String(name string) string {
-	if v, ok := p[name]; ok {
-		return v
-	} else {
-		panic("Params not exist: " + name)
+	for i := range p {
+		if p[i].Name == name {
+			return p[i].Value
+		}
 	}
+
+	panic("Params not exist: " + name)
 }
 
 // Bool return bool  with error.

@@ -167,12 +167,12 @@ func (t *Tree) addSubtree(segment, pattern string, handlers []Handler) {
 func (t *Tree) Match(url string) ([]Handler, Params, bool) {
 	url = strings.TrimPrefix(url, "/")
 
-	params := make(Params)
-	handlers, ok := t.matchNextSegment(0, url, params)
+	params := make(Params, 0, 3)
+	handlers, ok := t.matchNextSegment(0, url, &params)
 	return handlers, params, ok
 }
 
-func (t *Tree) matchNextSegment(globLevel int, url string, params Params) ([]Handler, bool) {
+func (t *Tree) matchNextSegment(globLevel int, url string, params *Params) ([]Handler, bool) {
 	i := strings.Index(url, "/")
 	if i == -1 {
 		return t.matchLeaf(globLevel, url, params)
@@ -180,7 +180,7 @@ func (t *Tree) matchNextSegment(globLevel int, url string, params Params) ([]Han
 	return t.matchSubtree(globLevel, url[:i], url[i+1:], params)
 }
 
-func (t *Tree) matchLeaf(globLevel int, url string, params Params) ([]Handler, bool) {
+func (t *Tree) matchLeaf(globLevel int, url string, params *Params) ([]Handler, bool) {
 	for i := 0; i < len(t.leaves); i++ {
 		switch t.leaves[i].typ {
 		case _PATTERN_STATIC:
@@ -189,22 +189,22 @@ func (t *Tree) matchLeaf(globLevel int, url string, params Params) ([]Handler, b
 			}
 		case _PATTERN_REGEXP:
 			if t.leaves[i].reg.MatchString(url) {
-				params[t.leaves[i].wildcards[0]] = url
+				*params = append(*params, Param{Name: t.leaves[i].wildcards[0], Value: url})
 				return t.leaves[i].handlers, true
 			}
 		case _PATTERN_HOLDER:
-			params[t.leaves[i].wildcards[0]] = url
+			*params = append(*params, Param{Name: t.leaves[i].wildcards[0], Value: url})
 			return t.leaves[i].handlers, true
 		case _PATTERN_MATCH_ALL:
-			params["*"] = url
-			params["*"+strconv.Itoa(globLevel)] = url
+			*params = append(*params, Param{Name: "*", Value: url})
+			*params = append(*params, Param{Name: "*" + strconv.Itoa(globLevel), Value: url})
 			return t.leaves[i].handlers, true
 		}
 	}
 	return nil, false
 }
 
-func (t *Tree) matchSubtree(globLevel int, segment, url string, params Params) ([]Handler, bool) {
+func (t *Tree) matchSubtree(globLevel int, segment, url string, params *Params) ([]Handler, bool) {
 	for i := 0; i < len(t.subtrees); i++ {
 		switch t.subtrees[i].typ {
 		case _PATTERN_STATIC:
@@ -215,7 +215,7 @@ func (t *Tree) matchSubtree(globLevel int, segment, url string, params Params) (
 			}
 		case _PATTERN_REGEXP:
 			if t.subtrees[i].reg.MatchString(segment) {
-				params[t.subtrees[i].wildcards[0]] = segment
+				*params = append(*params, Param{Name: t.subtrees[i].wildcards[0], Value: segment})
 
 				if handlers, ok := t.subtrees[i].matchNextSegment(globLevel, url, params); ok {
 					return handlers, true
@@ -223,12 +223,12 @@ func (t *Tree) matchSubtree(globLevel int, segment, url string, params Params) (
 			}
 		case _PATTERN_HOLDER:
 			if handlers, ok := t.subtrees[i].matchNextSegment(globLevel+1, url, params); ok {
-				params[t.subtrees[i].wildcards[0]] = segment
+				*params = append(*params, Param{Name: t.subtrees[i].wildcards[0], Value: segment})
 				return handlers, true
 			}
 		case _PATTERN_MATCH_ALL:
 			if handlers, ok := t.subtrees[i].matchNextSegment(globLevel+1, url, params); ok {
-				params["*"+strconv.Itoa(globLevel)] = segment
+				*params = append(*params, Param{Name: "*" + strconv.Itoa(globLevel), Value: segment})
 				return handlers, true
 			}
 		}
@@ -237,8 +237,8 @@ func (t *Tree) matchSubtree(globLevel int, segment, url string, params Params) (
 	if len(t.leaves) > 0 { //for match "/*"
 		leaf := t.leaves[len(t.leaves)-1]
 		if leaf.typ == _PATTERN_MATCH_ALL {
-			params["*"] = segment + "/" + url
-			params["*"+strconv.Itoa(globLevel)] = segment + "/" + url
+			*params = append(*params, Param{Name: "*", Value: segment + "/" + url})
+			*params = append(*params, Param{Name: "*" + strconv.Itoa(globLevel), Value: segment + "/" + url})
 			return leaf.handlers, true
 		}
 	}
