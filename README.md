@@ -25,32 +25,35 @@ import (
 )
 
 func main() {
-	router := water.Classic()
+	router := water.NewRouter()
+
+	router.Use(middleware)
 
 	router.Get("/", test)
 	router.Get("/help", test)
 	router.Any("/about", test)
 
-	router.Group("/a", func(g *water.Group) {
-		g.Before(middleware)
+	router.Group("/a", func(r *water.Router) {
+		r.Use(middleware)
 
-		g.Get("/1", test)
-		g.Get("/<id:int>", test2)
-		g.Group("/b", func(g *water.Group) {
-			g.Get("", test)
-			g.Any("/2", test)
-			g.Get("/<id ~ 70|80>", test2)
-			g.Get("/*", test)
+		r.Get("/1", test)
+		r.Get("/<id:int>", test2)
+		r.Group("/b", func(r *water.Router) {
+			r.Get("", test, test)
+			r.Any("/2", test)
+			r.Get("/<id ~ 70|80>", test2)
+			r.Get("/*", test)
 		})
 	})
 
-	router.PrintRoutes("GET")
+	w := router.Handler()
+	w.PrintRoutes("GET")
 
 	fmt.Println("---###---")
 
-	router.PrintTree("GET")
+	w.PrintTree("GET")
 
-	if err := router.ListenAndServe(":8080"); err != nil {
+	if err := water.ListenAndServe(":8080", w); err != nil {
 		log.Fatalln(err)
 	}
 }

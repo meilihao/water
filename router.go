@@ -90,9 +90,7 @@ type Router struct {
 	method  string // 只有终端节点有
 	pattern string
 
-	befores []interface{}
-	afters  []interface{}
-
+	befores  []interface{}
 	handlers []interface{} // 只有终端节点有
 
 	parent *Router
@@ -114,12 +112,8 @@ func (r *Router) Group(pattern string, fn func(*Router)) {
 	fn(rr)
 }
 
-func (r *Router) Before(handlers ...interface{}) {
+func (r *Router) Use(handlers ...interface{}) {
 	r.befores = append(r.befores, handlers...)
-}
-
-func (r *Router) After(handlers ...interface{}) {
-	r.afters = append(r.afters, handlers...)
 }
 
 func dump(r *Router, rs *routeStore) {
@@ -151,9 +145,6 @@ func getRoute(r *Router) *route {
 			hstmp = append(hstmp, hs...)
 			hs = hstmp
 		}
-		if len(tmp.afters) > 0 {
-			hs = append(hs, tmp.afters...)
-		}
 
 		if tmp.parent == nil {
 			break
@@ -181,6 +172,7 @@ func (r *Router) Handler() *water {
 	return w
 }
 
+// newRouteStore()没有放入Router.handle : 此时无法获取Router.After
 func (r *Router) handle(method, pattern string, handlers []interface{}) {
 	rr := &Router{
 		method:   method,
@@ -235,6 +227,6 @@ func (r *Router) Classic() {
 		panic("only allow for top router")
 	}
 
-	r.Before(Logger())
-	r.Before(Recovery())
+	r.Use(Logger())
+	r.Use(Recovery())
 }

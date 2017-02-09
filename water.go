@@ -3,7 +3,6 @@ package water
 import (
 	"fmt"
 	"net/http"
-	"reflect"
 	"sort"
 	"sync"
 	"time"
@@ -191,16 +190,10 @@ func (w *water) PrintRoutes(method string) {
 	sort.Strings(list)
 
 	for _, v := range list {
-		hname := []string{}
 		route := routes[v]
 
-		for _, h := range route.handlers {
-			rtype := reflect.TypeOf(h)
-
-			hname = append(hname, rtype.Name())
-		}
-
-		fmt.Println(v, hname)
+		// count(router.handlers) + uri
+		fmt.Printf("(%2d) %s\n", len(route.handlers), v)
 	}
 }
 
