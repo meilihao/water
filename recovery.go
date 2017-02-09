@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"runtime"
 	"time"
+
+	"github.com/meilihao/logx"
 )
 
 func Recovery() HandlerFunc {
@@ -28,7 +30,7 @@ func Recovery() HandlerFunc {
 					ctx.WriteHeader(http.StatusInternalServerError)
 				}
 
-				ctx.router.logger.Printf("panic %s : %s\n", time.Now().Format(LogTimeFormat), content)
+				logx.Errorf("panic %s : %s\n", time.Now().Format(LogTimeFormat), content)
 
 				if Status != Stable {
 					ctx.WriteString(content)

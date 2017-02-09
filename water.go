@@ -1,7 +1,14 @@
 package water
 
 import (
+	"fmt"
 	"net/http"
+	"reflect"
+	"sort"
+	"sync"
+	"time"
+
+	"github.com/meilihao/logx"
 )
 
 type Handler interface {
@@ -14,111 +21,230 @@ func (f HandlerFunc) ServeHTTP(ctx *Context) {
 	f(ctx)
 }
 
-// Context represents the context of current request of water instance.
-// Context体现了water处理当前请求时的上下文环境
-// 不在Context中使用"Resp  ResponseWriter"的原因:Resp.Write()和Ctx.Write()的行为不一致,
-// 因Resp.Write()不会设置ctx.written,导致在Recovery()等地方重复调用WriteHeader而报错
-// "http: multiple response.WriteHeader calls".
-type Context struct {
-	Environ Environ
-	Params  Params
-	Req     *http.Request
-	ResponseWriter
-
-	handlers       []Handler
-	handlersLength int
-	index          int
-
-	written bool
-	status  int
-
-	router *Router
-	Id     string
-}
-
-type ResponseWriter interface {
-	http.ResponseWriter
-	//http.Flusher
-	//http.Hijacker
-}
-
-func newContext(r *Router) *Context {
-	return &Context{
-		router: r,
+// support http.Handler
+func newHandler(handler interface{}) Handler {
+	switch h := handler.(type) {
+	case Handler:
+		return h
+	case func(*Context):
+		return HandlerFunc(h)
+		/*	case http.Handler:
+				return HandlerFunc(func(ctx *Context) {
+					h.ServeHTTP(ctx, ctx.Req)
+				})
+			case func(http.ResponseWriter, *http.Request):
+				return HandlerFunc(func(ctx *Context) {
+					h(ctx, ctx.Req)
+				})
+		*/
+	default:
+		panic("unsupported handler")
 	}
 }
 
-func (ctx *Context) reset() {
-	ctx.index = 0
+func newHandlers(handlers []interface{}) (a []Handler) {
+	n := len(handlers)
+	if n == 0 {
+		panic("empty handlers")
+	}
 
-	ctx.written = false
-	ctx.status = 0
+	a = make([]Handler, len(handlers))
+	for i, h := range handlers {
+		a[i] = newHandler(h)
+	}
+
+	return a
 }
 
-func (ctx *Context) Next() {
-	ctx.index += 1
-	ctx.run()
+func ListenAndServe(addr string, handler http.Handler) error {
+	return http.ListenAndServe(addr, handler)
 }
 
-func (ctx *Context) run() {
-	for ctx.index < ctx.handlersLength {
-		ctx.handlers[ctx.index].ServeHTTP(ctx)
-		ctx.index += 1
+func ListenAndServeTLS(addr, certFile, keyFile string, handler http.Handler) error {
+	return http.ListenAndServeTLS(addr, certFile, keyFile, handler)
+}
 
-		if ctx.written {
+// --- water ---
+
+type water struct {
+	routers           [8]*Tree
+	routeStore        *routeStore
+	serial            SerialAdapter
+	ctxPool           sync.Pool
+	RedirectFixedPath bool
+}
+
+func newWater() *water {
+	w := &water{
+		routers:           [8]*Tree{},
+		serial:            nil,
+		RedirectFixedPath: true,
+	}
+
+	w.ctxPool.New = func() interface{} {
+		return newContext()
+	}
+
+	return w
+}
+
+func (w *water) SetSerialAdapter(sa SerialAdapter) {
+	w.serial = sa
+}
+
+func (w *water) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
+	if !req.ProtoAtLeast(1, 1) || req.RequestURI == "*" || req.Method == "CONNECT" {
+		w.log(http.StatusBadRequest, req)
+		rw.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	if w.RedirectFixedPath {
+		if p := cleanPath(req.URL.Path); p != req.URL.Path {
+			u := *req.URL
+			u.Path = p
+			w.log(http.StatusMovedPermanently, req)
+			http.Redirect(rw, req, u.String(), http.StatusMovedPermanently)
 			return
 		}
 	}
-}
 
-func (ctx *Context) Written() bool {
-	return ctx.written
-}
-
-func (ctx *Context) Status() int {
-	return ctx.status
-}
-
-func (ctx *Context) WriteHeader(code int) {
-	if ctx.written {
-		ctx.router.logger.Println("water: multiple ctx.WriteHeader calls")
-	} else {
-		ctx.written = true
-		ctx.status = code
-		ctx.ResponseWriter.WriteHeader(code)
+	index := methodIndex(req.Method)
+	if index < 0 {
+		w.log(http.StatusMethodNotAllowed, req)
+		rw.WriteHeader(http.StatusMethodNotAllowed)
+		return
 	}
+
+	handlerChain, params, ok := w.routers[index].Match(req.URL.Path)
+	if !ok {
+		w.log(http.StatusNotFound, req)
+		rw.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	ctx := w.ctxPool.Get().(*Context)
+
+	ctx.reset()
+
+	ctx.Environ = make(Environ)
+	ctx.Params = params
+	ctx.ResponseWriter = rw.(ResponseWriter)
+	ctx.Req = req
+	ctx.handlers = handlerChain
+	ctx.handlersLength = len(handlerChain)
+
+	if w.serial != nil {
+		ctx.Id = w.serial.Id()
+	}
+
+	ctx.run()
+
+	w.ctxPool.Put(ctx)
 }
 
-func (ctx *Context) Write(data []byte) (int, error) {
-	if !ctx.written {
-		header := ctx.Header()
-		if len(data) > 0 && header.Get("Content-Type") == "" {
-			header.Set("Content-Type", http.DetectContentType(data))
+func (w *water) BuildTree() {
+	for _, v := range w.routeStore.routeSlice {
+		if !(v.uri == "/" || checkSplitPattern(v.uri)) {
+			panic(fmt.Sprintf("invalid r.%s pattern : [%s]", v.method, v.uri))
 		}
-		ctx.WriteHeader(http.StatusOK)
+
+		if t := w.routers[methodIndex(v.method)]; t != nil {
+			t.Add(v.uri, v.handlers)
+		} else {
+			t := NewTree()
+			t.Add(v.uri, v.handlers)
+			w.routers[methodIndex(v.method)] = t
+		}
 	}
-	return ctx.ResponseWriter.Write(data)
 }
 
-func (r *Router) ListenAndServe(addr string) error {
-	r.logListen(addr)
-	return http.ListenAndServe(addr, r)
-}
-
-func (r *Router) ListenAndServeTLS(addr string, certFile string, keyFile string) error {
-	r.logListen(addr)
-	return http.ListenAndServeTLS(addr, certFile, keyFile, r)
-}
-
-func (r *Router) logListen(addr string) {
+// handle log before invoke Logger()
+// 处理调用Logger()前的日志
+func (w *water) log(status int, req *http.Request) {
 	if LogClose {
 		return
 	}
 
-	r.logger.Printf("%s %s %s %s\n",
+	start := time.Now()
+	logx.Infof("%s |%s| %13v | %16s | %7s %s\n",
 		"[ water ]",
-		"listening on:",
-		addr,
-		"("+Status+")",
+		logStatus(status),
+		time.Now().Sub(start),
+		requestRemoteIp(req),
+		req.Method,
+		req.URL.String(),
 	)
+}
+
+// print routes by method
+// 打印指定方法的路由
+func (w *water) PrintRoutes(method string) {
+	method, _ = checkMethod(method)
+	routes := w.routeStore.routeMap[method]
+
+	list := make([]string, 0, len(routes))
+	for k := range routes {
+		list = append(list, k)
+	}
+
+	sort.Strings(list)
+
+	for _, v := range list {
+		hname := []string{}
+		route := routes[v]
+
+		for _, h := range route.handlers {
+			rtype := reflect.TypeOf(h)
+
+			hname = append(hname, rtype.Name())
+		}
+
+		fmt.Println(v, hname)
+	}
+}
+
+// print router tree by method
+// 打印指定方法的路由树
+// TODO 打印[]handler的名称
+func (w *water) PrintTree(method string) {
+	_, idx := checkMethod(method)
+	tree := w.routers[idx]
+
+	fmt.Println("/")
+	printTreeNode(0, tree)
+}
+
+func printTreeNode(depth int, tree *Tree) {
+	space := "│"
+	currentTree := tree
+	for {
+		n := len(currentTree.pattern)
+		if currentTree.parent != nil {
+			for i := 0; i < n; i++ {
+				space += " "
+			}
+			currentTree = currentTree.parent
+		} else {
+			break
+		}
+	}
+	for i := 0; i < depth*3; i++ { //每层"── "的宽度
+		space += " "
+	}
+
+	// the same order with tree.matchSubtree
+	if len(tree.subtrees) > 0 {
+		for _, v := range tree.subtrees {
+			fmt.Println(fmt.Sprintf("%s── %s", space, v.pattern))
+
+			printTreeNode(depth+1, v)
+		}
+	}
+
+	if len(tree.leaves) > 0 {
+		for _, v := range tree.leaves {
+			fmt.Println(fmt.Sprintf("%s── %s", space, v.pattern))
+		}
+	}
 }

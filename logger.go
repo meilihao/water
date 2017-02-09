@@ -3,6 +3,8 @@ package water
 import (
 	"fmt"
 	"time"
+
+	"github.com/meilihao/logx"
 )
 
 var (
@@ -57,7 +59,7 @@ func Logger() HandlerFunc {
 		ctx.Next()
 
 		// Layout : "prefix start_time [ status ] used_time | ip | method path"
-		ctx.router.logger.Printf("%s %v |%s| %13v | %16s | %7s %s\n",
+		logx.Infof("%s %v |%s| %13v | %16s | %7s %s\n",
 			logPrefix(ctx),
 			start.Format(LogTimeFormat),
 			logStatus(ctx.status),

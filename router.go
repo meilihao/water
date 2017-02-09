@@ -2,14 +2,8 @@ package water
 
 import (
 	"fmt"
-	"io"
-	"log"
-	"net/http"
-	"os"
-	"sort"
 	"strings"
 	"sync"
-	"time"
 )
 
 var (
@@ -48,127 +42,160 @@ func methodIndex(method string) int {
 	}
 }
 
+// --- route ---
+
+type route struct {
+	method, uri string
+	handlers    []Handler
+}
+
+// routeStore represents a thread-safe store for route pattern.
+// 用于检查route pattern是否重复(冲突)及以后打印
+type routeStore struct {
+	routeMap   map[string]map[string]*route
+	routeSlice []*route
+
+	lock sync.Mutex
+}
+
+func newRouteStore() *routeStore {
+	rs := &routeStore{
+		routeMap:   make(map[string]map[string]*route),
+		routeSlice: make([]*route, 0),
+	}
+
+	for m := range _HTTP_METHODS {
+		rs.routeMap[m] = make(map[string]*route)
+	}
+
+	return rs
+}
+
+func (rs *routeStore) add(r *route) {
+	rs.lock.Lock()
+	defer rs.lock.Unlock()
+
+	if rs.routeMap[r.method][r.uri] != nil {
+		panic(fmt.Sprintf("double uri : %s[%s]", r.method, r.uri))
+	}
+
+	rs.routeMap[r.method][r.uri] = r
+	rs.routeSlice = append(rs.routeSlice, r)
+}
+
+// --- router ---
+
+// 单父多子树
 type Router struct {
-	routers [8]*Tree
+	method  string // 只有终端节点有
+	pattern string
+
 	befores []interface{}
-	*routeMap
-	*groupMap
-	logger            *log.Logger
-	serial            SerialAdapter
-	ctxPool           sync.Pool
-	RedirectFixedPath bool
+	afters  []interface{}
+
+	handlers []interface{} // 只有终端节点有
+
+	parent *Router
+	sub    []*Router
 }
 
 func NewRouter() *Router {
-	return NewRouterWithLogger(os.Stdout)
+	return new(Router)
 }
 
-func NewRouterWithLogger(out io.Writer) *Router {
-	r := &Router{
-		routers:           [8]*Tree{},
-		befores:           make([]interface{}, 0),
-		routeMap:          newRouteMap(),
-		groupMap:          newGroupMap(),
-		logger:            log.New(out, "", 0),
-		serial:            nil,
-		RedirectFixedPath: true,
+func (r *Router) Group(pattern string, fn func(*Router)) {
+	rr := &Router{
+		pattern: pattern,
+		parent:  r,
 	}
 
-	r.ctxPool.New = func() interface{} {
-		return newContext(r)
-	}
+	r.sub = append(r.sub, rr)
 
-	return r
-}
-
-func Classic() *Router {
-	r := NewRouter()
-	r.Before(Logger())
-	r.Before(Recovery())
-
-	return r
-}
-
-func (r *Router) SetSerialAdapter(sa SerialAdapter) {
-	r.serial = sa
-}
-
-func (r *Router) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
-	if !req.ProtoAtLeast(1, 1) || req.RequestURI == "*" || req.Method == "CONNECT" {
-		r.log(http.StatusBadRequest, req)
-		rw.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
-	if r.RedirectFixedPath {
-		if p := cleanPath(req.URL.Path); p != req.URL.Path {
-			u := *req.URL
-			u.Path = p
-			r.log(http.StatusMovedPermanently, req)
-			http.Redirect(rw, req, u.String(), http.StatusMovedPermanently)
-			return
-		}
-	}
-
-	index := methodIndex(req.Method)
-	if index < 0 {
-		r.log(http.StatusMethodNotAllowed, req)
-		rw.WriteHeader(http.StatusMethodNotAllowed)
-		return
-	}
-
-	handlerChain, params, ok := r.routers[index].Match(req.URL.Path)
-	if !ok {
-		r.log(http.StatusNotFound, req)
-		rw.WriteHeader(http.StatusNotFound)
-		return
-	}
-
-	ctx := r.ctxPool.Get().(*Context)
-
-	ctx.reset()
-
-	ctx.Environ = make(Environ)
-	ctx.Params = params
-	ctx.ResponseWriter = rw.(ResponseWriter)
-	ctx.Req = req
-	ctx.handlers = handlerChain
-	ctx.handlersLength = len(handlerChain)
-
-	if r.serial != nil {
-		ctx.Id = r.serial.Id()
-	}
-
-	ctx.run()
-
-	r.ctxPool.Put(ctx)
-}
-
-// handle log before invoke Logger()
-// 处理调用Logger()前的日志
-func (r *Router) log(status int, req *http.Request) {
-	if LogClose {
-		return
-	}
-
-	start := time.Now()
-	r.logger.Printf("%s %v |%s| %13v | %16s | %7s %s\n",
-		"[ water ]",
-		start.Format(LogTimeFormat),
-		logStatus(status),
-		time.Now().Sub(start),
-		requestRemoteIp(req),
-		req.Method,
-		req.URL.String(),
-	)
+	fn(rr)
 }
 
 func (r *Router) Before(handlers ...interface{}) {
 	r.befores = append(r.befores, handlers...)
 }
 
+func (r *Router) After(handlers ...interface{}) {
+	r.afters = append(r.afters, handlers...)
+}
+
+func dump(r *Router, rs *routeStore) {
+	if r.sub == nil {
+		rs.add(getRoute(r))
+		return
+	}
+
+	for _, v := range r.sub {
+		dump(v, rs)
+	}
+}
+
+func getRoute(r *Router) *route {
+	ps := []string{}
+	hs := []interface{}{}
+
+	tmp := r
+	for {
+		ps = append(ps, tmp.pattern)
+
+		if len(tmp.handlers) > 0 {
+			hs = append(hs, tmp.handlers...)
+		}
+		if len(tmp.befores) > 0 {
+			hstmp := make([]interface{}, len(tmp.befores))
+
+			copy(hstmp, tmp.befores)
+			hstmp = append(hstmp, hs...)
+			hs = hstmp
+		}
+		if len(tmp.afters) > 0 {
+			hs = append(hs, tmp.afters...)
+		}
+
+		if tmp.parent == nil {
+			break
+		}
+
+		tmp = tmp.parent
+	}
+
+	return &route{
+		method:   r.method,
+		uri:      strings.Join(reverseStrings(ps), ""),
+		handlers: newHandlers(hs),
+	}
+}
+
+func (r *Router) Handler() *water {
+	rs := newRouteStore()
+
+	dump(r, rs)
+
+	w := newWater()
+	w.routeStore = rs
+	w.BuildTree()
+
+	return w
+}
+
+func (r *Router) handle(method, pattern string, handlers []interface{}) {
+	rr := &Router{
+		method:   method,
+		pattern:  pattern,
+		parent:   r,
+		handlers: handlers,
+	}
+
+	r.sub = append(r.sub, rr)
+}
+
 func (r *Router) Any(pattern string, handlers ...interface{}) {
-	r.handle("Any", pattern, handlers)
+	for m := range _HTTP_METHODS {
+		r.handle(m, pattern, handlers)
+	}
 }
 
 func (r *Router) Get(pattern string, handlers ...interface{}) {
@@ -203,179 +230,11 @@ func (r *Router) Trace(pattern string, handlers ...interface{}) {
 	r.handle("TRACE", pattern, handlers)
 }
 
-func (r *Router) handle(method, pattern string, handlers []interface{}) {
-	if !(pattern == "/" || checkSplitPattern(pattern)) {
-		panic(fmt.Sprintf("invalid r.%s pattern : [%s]", method, pattern))
+func (r *Router) Classic() {
+	if r.parent != nil {
+		panic("only allow for top router")
 	}
 
-	if _, ok := _HTTP_METHODS[method]; !(ok || method == "Any") {
-		panic("unknown HTTP method: " + method)
-	}
-
-	methods := make(map[string]bool)
-	if method == "Any" {
-		for m := range _HTTP_METHODS {
-			methods[m] = true
-		}
-	} else {
-		methods[method] = true
-	}
-
-	for m := range methods {
-		if r.routeMap.isExist(m, pattern) {
-			panic(fmt.Sprintf("double pattern : %s[%s]", m, pattern))
-		}
-	}
-
-	tmpHandlers := make([]interface{}, 0)
-	if len(r.befores) > 0 {
-		tmpHandlers = append(tmpHandlers, r.befores...)
-		tmpHandlers = append(tmpHandlers, handlers...)
-	} else {
-		tmpHandlers = handlers
-	}
-	routeHandlers := newHandlers(tmpHandlers)
-
-	for m := range methods {
-		if t := r.routers[methodIndex(m)]; t != nil {
-			t.Add(pattern, routeHandlers)
-		} else {
-			t := NewTree()
-			t.Add(pattern, routeHandlers)
-			r.routers[methodIndex(m)] = t
-		}
-		r.routeMap.add(m, pattern)
-	}
-}
-
-func NewHandler(handler interface{}) Handler {
-	switch t := handler.(type) {
-	case Handler:
-		return t
-	case func(*Context):
-		return HandlerFunc(t)
-	/*case http.Handler:
-		return HandlerFunc(func(ctx *Context) {
-			t.ServeHTTP(ctx.Resp, ctx.Req)
-		})
-	case func(http.ResponseWriter, *http.Request):
-		return HandlerFunc(func(ctx *Context) {
-			t(ctx.Resp, ctx.Req)
-		})*/
-	default:
-		panic("invalid handler")
-	}
-}
-
-func newHandlers(handlers []interface{}) []Handler {
-	hs := make([]Handler, len(handlers))
-	for k, v := range handlers {
-		hs[k] = NewHandler(v)
-	}
-	return hs
-}
-
-// routeMap represents a thread-safe map for route pattern.
-// 用于检查route pattern是否重复(冲突)
-type routeMap struct {
-	routes map[string]map[string]bool
-	lock   sync.RWMutex
-}
-
-func newRouteMap() *routeMap {
-	rm := &routeMap{
-		routes: make(map[string]map[string]bool),
-	}
-
-	for m := range _HTTP_METHODS {
-		rm.routes[m] = make(map[string]bool)
-	}
-
-	return rm
-}
-
-func (rm *routeMap) isExist(method, pattern string) bool {
-	rm.lock.RLock()
-	defer rm.lock.RUnlock()
-
-	return rm.routes[method][pattern]
-}
-
-func (rm *routeMap) add(method, pattern string) {
-	rm.lock.Lock()
-	defer rm.lock.Unlock()
-
-	rm.routes[method][pattern] = true
-}
-
-func checkMethod(method string) (string, int) {
-	method = strings.ToUpper(method)
-	idx := methodIndex(method)
-	if idx < 0 {
-		panic("unknown Support method: " + method)
-	}
-
-	return method, idx
-}
-
-// print routes by method
-// 打印指定方法的路由
-func (r *Router) PrintRoutes(method string) {
-	method, _ = checkMethod(method)
-	routes := r.routeMap.routes[method]
-
-	list := make([]string, 0, len(routes))
-	for k := range routes {
-		list = append(list, k)
-	}
-
-	sort.Strings(list)
-
-	for _, v := range list {
-		fmt.Println(v)
-	}
-}
-
-// print router tree by method
-// 打印指定方法的路由树
-func (r *Router) PrintTree(method string) {
-	_, idx := checkMethod(method)
-	tree := r.routers[idx]
-
-	fmt.Println("/")
-	printTreeNode(0, tree)
-}
-
-func printTreeNode(depth int, tree *Tree) {
-	space := "│"
-	currentTree := tree
-	for {
-		n := len(currentTree.pattern)
-		if currentTree.parent != nil {
-			for i := 0; i < n; i++ {
-				space += " "
-			}
-			currentTree = currentTree.parent
-		} else {
-			break
-		}
-	}
-	for i := 0; i < depth*3; i++ { //每层"── "的宽度
-		space += " "
-	}
-
-	// the same order with tree.matchSubtree
-	if len(tree.subtrees) > 0 {
-		for _, v := range tree.subtrees {
-			fmt.Println(fmt.Sprintf("%s── %s", space, v.pattern))
-
-			printTreeNode(depth+1, v)
-		}
-	}
-
-	if len(tree.leaves) > 0 {
-		for _, v := range tree.leaves {
-			fmt.Println(fmt.Sprintf("%s── %s", space, v.pattern))
-		}
-	}
+	r.Before(Logger())
+	r.Before(Recovery())
 }

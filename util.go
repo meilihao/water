@@ -103,3 +103,21 @@ func AESDecrypt(key, text []byte) ([]byte, error) {
 	}
 	return data, nil
 }
+
+func reverseStrings(s []string) []string {
+	for i, j := 0, len(s)-1; i < j; i, j = i+1, j-1 {
+		s[i], s[j] = s[j], s[i]
+	}
+
+	return s
+}
+
+func checkMethod(method string) (string, int) {
+	method = strings.ToUpper(method)
+	idx := methodIndex(method)
+	if idx < 0 {
+		panic("unsupport method: " + method)
+	}
+
+	return method, idx
+}
