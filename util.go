@@ -55,18 +55,6 @@ func checkSplitPattern(pattern string) bool {
 	return n > 0 && pattern[0] == '/' && pattern[n-1] != '/'
 }
 
-/*
-// wrap http.Handler to middleware
-// 将http.Handler包裹成中间件,不推荐
-func WrapBefore(handler http.Handler) HandlerFunc {
-	return func(ctx *Context) {
-		handler.ServeHTTP(ctx.Resp, ctx.Req)
-
-		ctx.Next()
-	}
-}
-*/
-
 // AESEncrypt encrypts text and given key with AES.
 func AESEncrypt(key, text []byte) ([]byte, error) {
 	block, err := aes.NewCipher(key)

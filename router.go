@@ -160,14 +160,19 @@ func getRoute(r *Router) *route {
 	}
 }
 
+// r is root router.
 func (r *Router) Handler() *water {
+	if r.parent != nil {
+		panic("sub router not allowed: Handler")
+	}
+
 	rs := newRouteStore()
 
 	dump(r, rs)
 
 	w := newWater()
 	w.routeStore = rs
-	w.BuildTree()
+	w.buildTree()
 
 	return w
 }
@@ -224,7 +229,7 @@ func (r *Router) Trace(pattern string, handlers ...interface{}) {
 
 func (r *Router) Classic() {
 	if r.parent != nil {
-		panic("only allow for top router")
+		panic("sub router not allowed : Classic()")
 	}
 
 	r.Use(Logger())

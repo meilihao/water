@@ -20,7 +20,7 @@ func (f HandlerFunc) ServeHTTP(ctx *Context) {
 	f(ctx)
 }
 
-// support http.Handler
+// unsupport http.Handler for default
 func newHandler(handler interface{}) Handler {
 	switch h := handler.(type) {
 	case Handler:
@@ -142,10 +142,10 @@ func (w *water) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	w.ctxPool.Put(ctx)
 }
 
-func (w *water) BuildTree() {
+func (w *water) buildTree() {
 	for _, v := range w.routeStore.routeSlice {
 		if !(v.uri == "/" || checkSplitPattern(v.uri)) {
-			panic(fmt.Sprintf("invalid r.%s pattern : [%s]", v.method, v.uri))
+			panic(fmt.Sprintf("invalid route : [%s : %s]", v.method, v.uri))
 		}
 
 		if t := w.routers[methodIndex(v.method)]; t != nil {
