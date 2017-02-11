@@ -13,12 +13,12 @@ const (
 
 // parseFormOrMultipartForm parses the raw query from the URL.
 func (ctx *Context) parseFormOrMultipartForm() error {
-	if strings.Contains(ctx.Req.Header.Get("Content-Type"), "multipart/form-data") {
-		if err := ctx.Req.ParseMultipartForm(DefaultMaxMemory); err != nil {
+	if strings.Contains(ctx.Request.Header.Get("Content-Type"), "multipart/form-data") {
+		if err := ctx.Request.ParseMultipartForm(DefaultMaxMemory); err != nil {
 			return errors.New("parseMultipartForm error:" + err.Error())
 		}
 	} else {
-		if err := ctx.Req.ParseForm(); err != nil {
+		if err := ctx.Request.ParseForm(); err != nil {
 			return errors.New("parseForm error:" + err.Error())
 		}
 	}
@@ -26,13 +26,13 @@ func (ctx *Context) parseFormOrMultipartForm() error {
 }
 
 // QueryString returns escapred and trimmed string.
-// Note: It is recommended! If not, you can use "ctx.Req.FormValue".
-// 这是推荐的做法,如果不认同,可使用ctx.Req.FormValue.
+// Note: It is recommended! If not, you can use "ctx.Request.FormValue".
+// 这是推荐的做法,如果不认同,可使用ctx.Request.FormValue.
 func (ctx *Context) QueryString(name string) string {
 	if err := ctx.parseFormOrMultipartForm(); err != nil {
 		panic(err.Error())
 	}
-	return template.HTMLEscapeString(strings.TrimSpace(ctx.Req.Form.Get(name)))
+	return template.HTMLEscapeString(strings.TrimSpace(ctx.Request.Form.Get(name)))
 }
 
 // QueryBool returns bool
@@ -77,7 +77,7 @@ func (ctx *Context) QueryStrings(name string) []string {
 		panic(err.Error())
 	}
 
-	vs, ok := ctx.Req.Form[name]
+	vs, ok := ctx.Request.Form[name]
 	if !ok {
 		return nil
 	}

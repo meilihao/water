@@ -65,8 +65,8 @@ func Logger() HandlerFunc {
 			logStatus(ctx.status),
 			time.Now().Sub(start),
 			ctx.RemoteIp(),
-			ctx.Req.Method,
-			ctx.Req.URL.String(),
+			ctx.Request.Method,
+			ctx.Request.URL.String(),
 		)
 	}
 }

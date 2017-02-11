@@ -9,7 +9,7 @@ import (
 )
 
 func (ctx *Context) Cookie(name string) string {
-	cookie, err := ctx.Req.Cookie(name)
+	cookie, err := ctx.Request.Cookie(name)
 	if err != nil {
 		return ""
 	}

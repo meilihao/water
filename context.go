@@ -14,7 +14,8 @@ import (
 type Context struct {
 	Environ Environ
 	Params  Params
-	Req     *http.Request
+
+	Request *http.Request
 	ResponseWriter
 
 	handlers       []Handler

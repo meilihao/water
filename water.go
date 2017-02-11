@@ -129,7 +129,7 @@ func (w *water) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	ctx.Environ = make(Environ)
 	ctx.Params = params
 	ctx.ResponseWriter = rw.(ResponseWriter)
-	ctx.Req = req
+	ctx.Request = req
 	ctx.handlers = handlerChain
 	ctx.handlersLength = len(handlerChain)
 
