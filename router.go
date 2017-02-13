@@ -116,14 +116,14 @@ func (r *Router) Use(handlers ...interface{}) {
 	r.befores = append(r.befores, handlers...)
 }
 
-func dump(r *Router, rs *routeStore) {
+func dumpRoute(r *Router, rs *routeStore) {
 	if r.sub == nil {
 		rs.add(getRoute(r))
 		return
 	}
 
 	for _, v := range r.sub {
-		dump(v, rs)
+		dumpRoute(v, rs)
 	}
 }
 
@@ -168,7 +168,7 @@ func (r *Router) Handler() *water {
 
 	rs := newRouteStore()
 
-	dump(r, rs)
+	dumpRoute(r, rs)
 
 	w := newWater()
 	w.routeStore = rs

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 
@@ -197,6 +198,13 @@ func (w *water) PrintRoutes(method string) {
 	}
 }
 
+func (w *water) PrintAllRoutes() {
+	for _, v := range w.routeStore.routeSlice {
+		// count(router.handlers) + uri
+		fmt.Printf("(%7s) %s\n", v.method, v.uri)
+	}
+}
+
 // print router tree by method
 // 打印指定方法的路由树
 // TODO 打印[]handler的名称
@@ -204,40 +212,23 @@ func (w *water) PrintTree(method string) {
 	_, idx := checkMethod(method)
 	tree := w.routers[idx]
 
-	fmt.Println("/")
-	printTreeNode(0, tree)
+	dumpTree(tree, 0)
 }
 
-func printTreeNode(depth int, tree *Tree) {
-	space := "│"
-	currentTree := tree
-	for {
-		n := len(currentTree.pattern)
-		if currentTree.parent != nil {
-			for i := 0; i < n; i++ {
-				space += " "
-			}
-			currentTree = currentTree.parent
-		} else {
-			break
+func dumpTree(t *Tree, depth int) {
+	if len(t.subtrees) > 0 {
+		for _, tree := range t.subtrees {
+			printName(tree.pattern, depth)
+			dumpTree(tree, depth+1)
 		}
 	}
-	for i := 0; i < depth*3; i++ { //每层"── "的宽度
-		space += " "
-	}
-
-	// the same order with tree.matchSubtree
-	if len(tree.subtrees) > 0 {
-		for _, v := range tree.subtrees {
-			fmt.Println(fmt.Sprintf("%s── %s", space, v.pattern))
-
-			printTreeNode(depth+1, v)
+	if len(t.leaves) > 0 {
+		for _, leaf := range t.leaves {
+			printName(leaf.pattern, depth)
 		}
 	}
+}
 
-	if len(tree.leaves) > 0 {
-		for _, v := range tree.leaves {
-			fmt.Println(fmt.Sprintf("%s── %s", space, v.pattern))
-		}
-	}
+func printName(name string, depth int) {
+	fmt.Printf("%s+---%s\n", strings.Repeat(" ", depth*4), name)
 }
