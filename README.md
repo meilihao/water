@@ -67,7 +67,7 @@ func middleware(ctx *water.Context) {
 }
 
 func test(ctx *water.Context) {
-	ctx.WriteString(ctx.Req.RequestURI)
+	ctx.WriteString(ctx.Request.RequestURI)
 }
 
 func test2(ctx *water.Context) {
