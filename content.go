@@ -8,8 +8,11 @@ import (
 	"io/ioutil"
 	"mime/multipart"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
+
+	"github.com/meilihao/logx"
 )
 
 // 301
@@ -132,8 +135,9 @@ func (ctx *Context) Download(fpath string) error {
 	}
 	defer f.Close()
 
-	fName := filepath.Base(fpath)
-	ctx.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%v\"", fName))
+	ctx.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"",
+		url.QueryEscape(filepath.Base(fpath))))
+
 	_, err = io.Copy(ctx, f)
 	return err
 }
@@ -144,19 +148,19 @@ func (ctx *Context) WriteString(str string) {
 }
 
 func (ctx *Context) WriteJson(v interface{}) error {
-	ctx.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	ctx.Header().Set("Content-Type", "application/json; charset=utf-8")
 	err := json.NewEncoder(ctx).Encode(v)
 	if err != nil {
-		ctx.Header().Del("Content-Type")
+		logx.Warn(err)
 	}
 	return err
 }
 
 func (ctx *Context) WriteXml(v interface{}) error {
-	ctx.Header().Set("Content-Type", "application/xml; charset=UTF-8")
+	ctx.Header().Set("Content-Type", "application/xml; charset=utf-8")
 	err := xml.NewEncoder(ctx).Encode(v)
 	if err != nil {
-		ctx.Header().Del("Content-Type")
+		logx.Warn(err)
 	}
 	return err
 }
@@ -173,10 +177,18 @@ func (ctx *Context) DecodeXml(v interface{}) error {
 	return xml.NewDecoder(ctx.Request.Body).Decode(v)
 }
 
-func (ctx *Context) ErrorJson(v string) {
-	ctx.WriteJson(map[string]string{"Error": v})
+func (ctx *Context) ErrorJson(v interface{}) {
+	ctx.WriteJson(map[string]string{"Error": fmt.Sprint(v)})
+}
+
+func (ctx *Context) ErrorfJson(format string, a ...interface{}) {
+	ctx.WriteJson(map[string]string{"Error": fmt.Sprintf(format, a...)})
 }
 
 func (ctx *Context) IdJson(v interface{}) {
 	ctx.WriteJson(map[string]interface{}{"Id": v})
+}
+
+func (ctx *Context) DataJson(v interface{}) {
+	ctx.WriteJson(map[string]interface{}{"Data": v})
 }

@@ -51,6 +51,7 @@ func (ctx *Context) CookieFloat64(name string) float64 {
 	return v
 }
 
+// others... : MaxAge, Path, Domain, Secure, HttpOnly.
 func (ctx *Context) SetCookie(name string, value string, others ...interface{}) {
 	cookie := http.Cookie{}
 	cookie.Name = name
