@@ -2,6 +2,7 @@ package water
 
 import (
 	"fmt"
+	"net/http"
 	"strings"
 	"sync"
 )
@@ -85,7 +86,7 @@ func (rs *routeStore) add(r *route) {
 
 // --- router ---
 
-// 单父多子树
+// 树(单父多子)
 type Router struct {
 	method  string // 只有终端节点有
 	pattern string
@@ -177,7 +178,8 @@ func (r *Router) Handler() *water {
 	return w
 }
 
-// newRouteStore()没有放入Router.handle : 此时无法获取Router.After
+// 此时还无法获取Router.afters,因为Router.afters还未执行到
+// RouteStor放入Route后才可获取afters的信息
 func (r *Router) handle(method, pattern string, handlers []interface{}) {
 	rr := &Router{
 		method:   method,
@@ -196,35 +198,35 @@ func (r *Router) Any(pattern string, handlers ...interface{}) {
 }
 
 func (r *Router) Get(pattern string, handlers ...interface{}) {
-	r.handle("GET", pattern, handlers)
+	r.handle(http.MethodGet, pattern, handlers)
 }
 
 func (r *Router) Post(pattern string, handlers ...interface{}) {
-	r.handle("POST", pattern, handlers)
-}
-
-func (r *Router) Delete(pattern string, handlers ...interface{}) {
-	r.handle("DELETE", pattern, handlers)
+	r.handle(http.MethodPost, pattern, handlers)
 }
 
 func (r *Router) Put(pattern string, handlers ...interface{}) {
-	r.handle("PUT", pattern, handlers)
+	r.handle(http.MethodPut, pattern, handlers)
 }
 
 func (r *Router) Patch(pattern string, handlers ...interface{}) {
-	r.handle("PATCH", pattern, handlers)
+	r.handle(http.MethodPatch, pattern, handlers)
+}
+
+func (r *Router) Delete(pattern string, handlers ...interface{}) {
+	r.handle(http.MethodDelete, pattern, handlers)
 }
 
 func (r *Router) Options(pattern string, handlers ...interface{}) {
-	r.handle("OPTIONS", pattern, handlers)
+	r.handle(http.MethodOptions, pattern, handlers)
 }
 
 func (r *Router) Head(pattern string, handlers ...interface{}) {
-	r.handle("HEAD", pattern, handlers)
+	r.handle(http.MethodHead, pattern, handlers)
 }
 
 func (r *Router) Trace(pattern string, handlers ...interface{}) {
-	r.handle("TRACE", pattern, handlers)
+	r.handle(http.MethodTrace, pattern, handlers)
 }
 
 func (r *Router) Classic() {
