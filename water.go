@@ -67,7 +67,7 @@ func ListenAndServeTLS(addr, certFile, keyFile string, handler http.Handler) err
 // --- water ---
 
 type water struct {
-	routers           [8]*Tree
+	routers           [8]*node
 	routeStore        *routeStore
 	serial            SerialAdapter
 	ctxPool           sync.Pool
@@ -76,7 +76,7 @@ type water struct {
 
 func newWater() *water {
 	w := &water{
-		routers:           [8]*Tree{},
+		routers:           [8]*node{},
 		serial:            nil,
 		RedirectFixedPath: true,
 	}
@@ -150,10 +150,10 @@ func (w *water) buildTree() {
 		}
 
 		if t := w.routers[methodIndex(v.method)]; t != nil {
-			t.Add(v.uri, v.handlers)
+			t.add(v.uri, v.handlers)
 		} else {
-			t := NewTree()
-			t.Add(v.uri, v.handlers)
+			t := newTree()
+			t.add(v.uri, v.handlers)
 			w.routers[methodIndex(v.method)] = t
 		}
 	}
@@ -212,19 +212,20 @@ func (w *water) PrintTree(method string) {
 	_, idx := checkMethod(method)
 	tree := w.routers[idx]
 
+	printName(tree.pattern, 0)
 	dumpTree(tree, 0)
 }
 
-func dumpTree(t *Tree, depth int) {
-	if len(t.subtrees) > 0 {
-		for _, tree := range t.subtrees {
-			printName(tree.pattern, depth)
-			dumpTree(tree, depth+1)
+func dumpTree(n *node, depth int) {
+	if len(n.subNodes) > 0 {
+		for _, sub := range n.subNodes {
+			printName(sub.pattern, depth)
+			dumpTree(sub, depth+1)
 		}
 	}
-	if len(t.leaves) > 0 {
-		for _, leaf := range t.leaves {
-			printName(leaf.pattern, depth)
+	if len(n.endNodes) > 0 {
+		for _, end := range n.endNodes {
+			printName(end.pattern, depth)
 		}
 	}
 }

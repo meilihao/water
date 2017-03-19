@@ -45,6 +45,8 @@ func main() {
 			r.Get("/*", test)
 		})
 	})
+	router.Get("/d2/<id ~ z(d*)b>", test3)
+	router.Get("/d2/<id1+id2 ~ z(d*)h(u)b>", test3)
 
 	w := router.Handler()
 	w.PrintRoutes("GET")
@@ -72,6 +74,10 @@ func test(ctx *water.Context) {
 
 func test2(ctx *water.Context) {
 	ctx.WriteJson(ctx.Params.MustInt("id"))
+}
+
+func test3(ctx *water.Context) {
+	ctx.WriteJson(ctx.Params)
 }
 ```
 
