@@ -178,17 +178,17 @@ func (ctx *Context) DecodeXml(v interface{}) error {
 }
 
 func (ctx *Context) ErrorJson(v interface{}) {
-	ctx.WriteJson(map[string]string{"Error": fmt.Sprint(v)})
+	ctx.WriteJson(map[string]string{"error": fmt.Sprint(v)})
 }
 
 func (ctx *Context) ErrorfJson(format string, a ...interface{}) {
-	ctx.WriteJson(map[string]string{"Error": fmt.Sprintf(format, a...)})
+	ctx.WriteJson(map[string]string{"error": fmt.Sprintf(format, a...)})
 }
 
 func (ctx *Context) IdJson(v interface{}) {
-	ctx.WriteJson(map[string]interface{}{"Id": v})
+	ctx.WriteJson(map[string]interface{}{"id": v})
 }
 
 func (ctx *Context) DataJson(v interface{}) {
-	ctx.WriteJson(map[string]interface{}{"Data": v})
+	ctx.WriteJson(map[string]interface{}{"data": v})
 }
