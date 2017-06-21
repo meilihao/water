@@ -30,7 +30,7 @@ func Recovery() HandlerFunc {
 					ctx.WriteHeader(http.StatusInternalServerError)
 				}
 
-				logx.Errorf("panic %s : %s\n", time.Now().Format(LogTimeFormat), content)
+				logx.Errorf("panic %s : %s", time.Now().Format(LogTimeFormat), content)
 
 				if Status != Stable {
 					ctx.WriteString(content)

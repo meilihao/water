@@ -167,7 +167,7 @@ func (w *water) log(status int, req *http.Request) {
 	}
 
 	start := time.Now()
-	logx.Infof("%s |%s| %13v | %16s | %7s %s\n",
+	logx.Infof("%s |%s| %13v | %16s | %7s %s",
 		"[ water ]",
 		logStatus(status),
 		time.Now().Sub(start),
