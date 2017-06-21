@@ -134,7 +134,7 @@ func getRoute(r *Router) *route {
 
 	tmp := r
 	for {
-		ps = append(ps, tmp.pattern)
+		ps = append(ps, strings.TrimSpace(tmp.pattern))
 
 		if len(tmp.handlers) > 0 {
 			hs = append(hs, tmp.handlers...)
@@ -154,11 +154,17 @@ func getRoute(r *Router) *route {
 		tmp = tmp.parent
 	}
 
-	return &route{
+	re := &route{
 		method:   r.method,
 		uri:      strings.Join(reverseStrings(ps), ""),
 		handlers: newHandlers(hs),
 	}
+
+	if len(re.handlers) == 0 {
+		panic(fmt.Sprintf("handler err : empty handlers in route(%s,%s)", re.method, re.uri))
+	}
+
+	return re
 }
 
 // r is root router.
@@ -181,6 +187,12 @@ func (r *Router) Handler() *water {
 // 此时还无法获取Router.afters,因为Router.afters还未执行到
 // RouteStor放入Route后才可获取afters的信息
 func (r *Router) handle(method, pattern string, handlers []interface{}) {
+	for _, v := range handlers {
+		if v == nil {
+			panic(fmt.Sprintf("handler err : find nil in route(%s,%s)", method, pattern))
+		}
+	}
+
 	rr := &Router{
 		method:   method,
 		pattern:  pattern,
