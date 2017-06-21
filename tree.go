@@ -181,6 +181,11 @@ func (n *node) addSubNode(segment, pattern string, handlers []Handler) {
 // --- match uri
 
 func (n *node) Match(uri string) ([]Handler, Params, bool) {
+	// no method
+	if n == nil {
+		return nil, nil, false
+	}
+
 	if uri == "/" {
 		return n.handlers, nil, true
 	}
