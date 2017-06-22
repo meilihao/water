@@ -1,7 +1,11 @@
 package water
 
 import (
+	"bytes"
 	"fmt"
+	"io"
+	"io/ioutil"
+	"strings"
 	"time"
 
 	"github.com/meilihao/logx"
@@ -16,6 +20,7 @@ var (
 
 	LogColor      = true
 	LogClose      = false
+	LogHttpBody   = true
 	LogTimeFormat = "2006-01-02 15:04:05"
 )
 
@@ -55,11 +60,23 @@ func Logger() HandlerFunc {
 		}
 
 		start := time.Now()
+		body := ""
+
+		if LogHttpBody && ctx.Request.Body != nil && strings.Contains(ctx.Request.Header.Get("Content-Type"), "application/json") {
+			safe := &io.LimitedReader{R: ctx.Request.Body, N: 1 << 20}
+			requestbody, _ := ioutil.ReadAll(safe)
+			ctx.Request.Body.Close()
+
+			bf := bytes.NewBuffer(requestbody)
+			ctx.Request.Body = ioutil.NopCloser(bf)
+
+			body = "\n" + string(requestbody)
+		}
 
 		ctx.Next()
 
 		// Layout : "prefix start_time [ status ] used_time | ip | method path"
-		logx.Infof("%s %v |%s| %13v | %16s | %7s %s",
+		logx.Infof("%s %v |%s| %13v | %16s | %7s %s%s",
 			logPrefix(ctx),
 			start.Format(LogTimeFormat),
 			logStatus(ctx.status),
@@ -67,6 +84,7 @@ func Logger() HandlerFunc {
 			ctx.RemoteIp(),
 			ctx.Request.Method,
 			ctx.Request.URL.String(),
+			body,
 		)
 	}
 }
