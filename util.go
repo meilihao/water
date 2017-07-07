@@ -102,7 +102,7 @@ func reverseStrings(s []string) []string {
 
 func checkMethod(method string) (string, int) {
 	method = strings.ToUpper(method)
-	idx := methodIndex(method)
+	idx := MethodIndex(method)
 	if idx < 0 {
 		panic("unsupport method: " + method)
 	}

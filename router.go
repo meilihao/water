@@ -9,34 +9,34 @@ import (
 
 var (
 	_HTTP_METHODS = map[string]int{
-		"GET":     0,
-		"POST":    1,
-		"DELETE":  2,
-		"PUT":     3,
-		"PATCH":   4,
-		"HEAD":    5,
-		"OPTIONS": 6,
-		"TRACE":   7,
+		http.MethodGet:     0,
+		http.MethodPost:    1,
+		http.MethodDelete:  2,
+		http.MethodPut:     3,
+		http.MethodPatch:   4,
+		http.MethodHead:    5,
+		http.MethodOptions: 6,
+		http.MethodTrace:   7,
 	}
 )
 
-func methodIndex(method string) int {
+func MethodIndex(method string) int {
 	switch method {
-	case "GET":
+	case http.MethodGet:
 		return 0
-	case "POST":
+	case http.MethodPost:
 		return 1
-	case "DELETE":
+	case http.MethodDelete:
 		return 2
-	case "PUT":
+	case http.MethodPut:
 		return 3
-	case "PATCH":
+	case http.MethodPatch:
 		return 4
-	case "HEAD":
+	case http.MethodHead:
 		return 5
-	case "OPTIONS":
+	case http.MethodOptions:
 		return 6
-	case "TRACE":
+	case http.MethodTrace:
 		return 7
 	default:
 		return -1

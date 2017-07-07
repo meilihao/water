@@ -100,7 +100,7 @@ func (w *water) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		}
 	}
 
-	index := methodIndex(req.Method)
+	index := MethodIndex(req.Method)
 	if index < 0 {
 		w.log(http.StatusMethodNotAllowed, req)
 		rw.WriteHeader(http.StatusMethodNotAllowed)
@@ -140,12 +140,12 @@ func (w *water) buildTree() {
 			panic(fmt.Sprintf("invalid route : [%s : %s]", v.method, v.uri))
 		}
 
-		if t := w.routers[methodIndex(v.method)]; t != nil {
+		if t := w.routers[MethodIndex(v.method)]; t != nil {
 			t.add(v.uri, v.handlers)
 		} else {
 			t := newTree()
 			t.add(v.uri, v.handlers)
-			w.routers[methodIndex(v.method)] = t
+			w.routers[MethodIndex(v.method)] = t
 		}
 	}
 }
