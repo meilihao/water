@@ -54,10 +54,13 @@ func main() {
 
 	fmt.Println("\n\n", "Raw Router Tree:")
 	w.PrintRawRouter()
+
 	fmt.Println("\n\n", "GET's Routes:")
 	w.PrintRawRoutes("GET")
+
 	fmt.Println("\n\n", "All Routes:")
 	w.PrintRawAllRoutes()
+
 	fmt.Println("\n\n", "GET's Release Router Tree:")
 	w.PrintRouterTree("GET")
 
