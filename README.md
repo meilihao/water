@@ -32,6 +32,7 @@ func main() {
 	router.Get("/", test)
 	router.Get("/help", test)
 	router.Any("/about", test)
+	router.Options("/*")
 
 	router.Group("/a", func(r *water.Router) {
 		r.Use(middleware)
@@ -41,7 +42,7 @@ func main() {
 		r.Group("/b", func(r *water.Router) {
 			r.Get("", test, test)
 			r.Any("/2", test)
-			r.Get("/<id ~ 70|80>", test2)
+			r.Put("/<id ~ 70|80>", test2)
 			r.Get("/*", test)
 		})
 	})
@@ -49,13 +50,17 @@ func main() {
 	router.Get("/d2/<id1+id2 ~ z(d*)h(u)b>", test3)
 
 	w := router.Handler()
-	w.PrintRoutes("GET")
 
-	fmt.Println("---###---")
+	fmt.Println("\n\n", "Raw Router Tree:")
+	w.PrintRawRouter()
+	fmt.Println("\n\n", "GET's Routes:")
+	w.PrintRawRoutes("GET")
+	fmt.Println("\n\n", "All Routes:")
+	w.PrintRawAllRoutes()
+	fmt.Println("\n\n", "GET's Release Router Tree:")
+	w.PrintRouterTree("GET")
 
-	w.PrintTree("GET")
-
-	if err := water.ListenAndServe(":8080", w); err != nil {
+	if err := water.ListenAndServe(":8081", w); err != nil {
 		log.Fatalln(err)
 	}
 }
@@ -79,6 +84,98 @@ func test2(ctx *water.Context) {
 func test3(ctx *water.Context) {
 	ctx.WriteJson(ctx.Params)
 }
+```
+
+output(router tree):
+```sh
+ Raw Router Tree:
+Routers
+├── / [GET     : 1]
+├── /help [GET     : 1]
+├── /about [POST    : 1]
+├── /about [TRACE   : 1]
+├── /about [GET     : 1]
+├── /about [PUT     : 1]
+├── /about [PATCH   : 1]
+├── /about [HEAD    : 1]
+├── /about [OPTIONS : 1]
+├── /about [DELETE  : 1]
+├── /* [OPTIONS : 0]
+├── /a
+│   ├── /1 [GET     : 1]
+│   ├── /<id:int> [GET     : 1]
+│   └── /b
+│       ├──  [GET     : 2]
+│       ├── /2 [DELETE  : 1]
+│       ├── /2 [PUT     : 1]
+│       ├── /2 [PATCH   : 1]
+│       ├── /2 [HEAD    : 1]
+│       ├── /2 [OPTIONS : 1]
+│       ├── /2 [GET     : 1]
+│       ├── /2 [POST    : 1]
+│       ├── /2 [TRACE   : 1]
+│       ├── /<id ~ 70|80> [PUT     : 1]
+│       └── /* [GET     : 1]
+├── /d2/<id ~ z(d*)b> [GET     : 1]
+└── /d2/<id1+id2 ~ z(d*)h(u)b> [GET     : 1]
+
+
+ GET's Routes:
+( 2) /
+( 3) /a/1
+( 3) /a/<id:int>
+( 4) /a/b
+( 3) /a/b/*
+( 3) /a/b/2
+( 2) /about
+( 2) /d2/<id ~ z(d*)b>
+( 2) /d2/<id1+id2 ~ z(d*)h(u)b>
+( 2) /help
+
+
+ All Routes:
+(    GET) /
+(    GET) /help
+(   POST) /about
+(  TRACE) /about
+(    GET) /about
+(    PUT) /about
+(  PATCH) /about
+(   HEAD) /about
+(OPTIONS) /about
+( DELETE) /about
+(OPTIONS) /*
+(    GET) /a/1
+(    GET) /a/<id:int>
+(    GET) /a/b
+( DELETE) /a/b/2
+(    PUT) /a/b/2
+(  PATCH) /a/b/2
+(   HEAD) /a/b/2
+(OPTIONS) /a/b/2
+(    GET) /a/b/2
+(   POST) /a/b/2
+(  TRACE) /a/b/2
+(    PUT) /a/b/<id ~ 70|80>
+(    GET) /a/b/*
+(    GET) /d2/<id ~ z(d*)b>
+(    GET) /d2/<id1+id2 ~ z(d*)h(u)b>
+
+
+ GET's Release Router Tree:
+/ [2]
+├── a
+│   ├── b
+│   │   ├── 2 [3]
+│   │   └── * [3]
+│   ├── 1 [3]
+│   ├── b [4]
+│   └── <id:int> [3]
+├── d2
+│   ├── <id ~ z(d*)b> [2]
+│   └── <id1+id2 ~ z(d*)h(u)b> [2]
+├── help [2]
+└── about [2]
 ```
 
 ## Middlewares

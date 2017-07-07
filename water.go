@@ -3,8 +3,6 @@ package water
 import (
 	"fmt"
 	"net/http"
-	"sort"
-	"strings"
 	"sync"
 	"time"
 
@@ -58,6 +56,7 @@ func ListenAndServeTLS(addr, certFile, keyFile string, handler http.Handler) err
 // --- water ---
 
 type water struct {
+	rootRouter        *Router
 	routers           [8]*node
 	routeStore        *routeStore
 	serial            SerialAdapter
@@ -166,61 +165,4 @@ func (w *water) log(status int, req *http.Request) {
 		req.Method,
 		req.URL.String(),
 	)
-}
-
-// print routes by method
-// 打印指定方法的路由
-func (w *water) PrintRoutes(method string) {
-	method, _ = checkMethod(method)
-	routes := w.routeStore.routeMap[method]
-
-	list := make([]string, 0, len(routes))
-	for k := range routes {
-		list = append(list, k)
-	}
-
-	sort.Strings(list)
-
-	for _, v := range list {
-		route := routes[v]
-
-		// count(router.handlers) + uri
-		fmt.Printf("(%2d) %s\n", len(route.handlers), v)
-	}
-}
-
-func (w *water) PrintAllRoutes() {
-	for _, v := range w.routeStore.routeSlice {
-		// count(router.handlers) + uri
-		fmt.Printf("(%7s) %s\n", v.method, v.uri)
-	}
-}
-
-// print router tree by method
-// 打印指定方法的路由树
-// TODO 打印[]handler的名称
-func (w *water) PrintTree(method string) {
-	_, idx := checkMethod(method)
-	tree := w.routers[idx]
-
-	printName(tree.pattern, 0)
-	dumpTree(tree, 0)
-}
-
-func dumpTree(n *node, depth int) {
-	if len(n.subNodes) > 0 {
-		for _, sub := range n.subNodes {
-			printName(sub.pattern, depth)
-			dumpTree(sub, depth+1)
-		}
-	}
-	if len(n.endNodes) > 0 {
-		for _, end := range n.endNodes {
-			printName(end.pattern, depth)
-		}
-	}
-}
-
-func printName(name string, depth int) {
-	fmt.Printf("%s+---%s\n", strings.Repeat(" ", depth*4), name)
 }

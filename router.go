@@ -50,10 +50,10 @@ type route struct {
 	handlers    []Handler
 }
 
-// routeStore represents a thread-safe store for route pattern.
-// 用于检查route pattern是否重复(冲突)及以后打印
+// routeStore represents a thread-safe store for route uri.
+// to check double route uri and to print route uri
 type routeStore struct {
-	routeMap   map[string]map[string]*route
+	routeMap   map[string]map[string]*route // [http_method][uri]route
 	routeSlice []*route
 
 	lock sync.Mutex
@@ -86,13 +86,13 @@ func (rs *routeStore) add(r *route) {
 
 // --- router ---
 
-// 树(单父多子)
+// multiway tree
 type Router struct {
-	method  string // 只有终端节点有
+	method  string // only in router leaf
 	pattern string
 
 	befores  []interface{}
-	handlers []interface{} // 只有终端节点有
+	handlers []interface{} // only in router leaf
 
 	parent *Router
 	sub    []*Router
@@ -115,6 +115,61 @@ func (r *Router) Group(pattern string, fn func(*Router)) {
 
 func (r *Router) Use(handlers ...interface{}) {
 	r.befores = append(r.befores, handlers...)
+}
+
+func (r *Router) handle(method, pattern string, handlers []interface{}) {
+	for _, v := range handlers {
+		if v == nil {
+			panic(fmt.Sprintf("handler err : find nil in handlers(%s,%s)", method, pattern))
+		}
+	}
+
+	rr := &Router{
+		method:   method,
+		pattern:  pattern,
+		parent:   r,
+		handlers: handlers,
+	}
+
+	r.sub = append(r.sub, rr)
+}
+
+func (r *Router) Any(pattern string, handlers ...interface{}) {
+	for m := range _HTTP_METHODS {
+		r.handle(m, pattern, handlers)
+	}
+}
+
+func (r *Router) Get(pattern string, handlers ...interface{}) {
+	r.handle(http.MethodGet, pattern, handlers)
+}
+
+func (r *Router) Post(pattern string, handlers ...interface{}) {
+	r.handle(http.MethodPost, pattern, handlers)
+}
+
+func (r *Router) Put(pattern string, handlers ...interface{}) {
+	r.handle(http.MethodPut, pattern, handlers)
+}
+
+func (r *Router) Patch(pattern string, handlers ...interface{}) {
+	r.handle(http.MethodPatch, pattern, handlers)
+}
+
+func (r *Router) Delete(pattern string, handlers ...interface{}) {
+	r.handle(http.MethodDelete, pattern, handlers)
+}
+
+func (r *Router) Options(pattern string, handlers ...interface{}) {
+	r.handle(http.MethodOptions, pattern, handlers)
+}
+
+func (r *Router) Head(pattern string, handlers ...interface{}) {
+	r.handle(http.MethodHead, pattern, handlers)
+}
+
+func (r *Router) Trace(pattern string, handlers ...interface{}) {
+	r.handle(http.MethodTrace, pattern, handlers)
 }
 
 func dumpRoute(r *Router, rs *routeStore) {
@@ -167,10 +222,11 @@ func getRoute(r *Router) *route {
 	return re
 }
 
+// to generate router tree.
 // r is root router.
 func (r *Router) Handler() *water {
 	if r.parent != nil {
-		panic("sub router not allowed: Handler")
+		panic("sub router not allowed: Handler()")
 	}
 
 	rs := newRouteStore()
@@ -178,67 +234,11 @@ func (r *Router) Handler() *water {
 	dumpRoute(r, rs)
 
 	w := newWater()
+	w.rootRouter = r
 	w.routeStore = rs
 	w.buildTree()
 
 	return w
-}
-
-// 此时还无法获取Router.afters,因为Router.afters还未执行到
-// RouteStor放入Route后才可获取afters的信息
-func (r *Router) handle(method, pattern string, handlers []interface{}) {
-	for _, v := range handlers {
-		if v == nil {
-			panic(fmt.Sprintf("handler err : find nil in route(%s,%s)", method, pattern))
-		}
-	}
-
-	rr := &Router{
-		method:   method,
-		pattern:  pattern,
-		parent:   r,
-		handlers: handlers,
-	}
-
-	r.sub = append(r.sub, rr)
-}
-
-func (r *Router) Any(pattern string, handlers ...interface{}) {
-	for m := range _HTTP_METHODS {
-		r.handle(m, pattern, handlers)
-	}
-}
-
-func (r *Router) Get(pattern string, handlers ...interface{}) {
-	r.handle(http.MethodGet, pattern, handlers)
-}
-
-func (r *Router) Post(pattern string, handlers ...interface{}) {
-	r.handle(http.MethodPost, pattern, handlers)
-}
-
-func (r *Router) Put(pattern string, handlers ...interface{}) {
-	r.handle(http.MethodPut, pattern, handlers)
-}
-
-func (r *Router) Patch(pattern string, handlers ...interface{}) {
-	r.handle(http.MethodPatch, pattern, handlers)
-}
-
-func (r *Router) Delete(pattern string, handlers ...interface{}) {
-	r.handle(http.MethodDelete, pattern, handlers)
-}
-
-func (r *Router) Options(pattern string, handlers ...interface{}) {
-	r.handle(http.MethodOptions, pattern, handlers)
-}
-
-func (r *Router) Head(pattern string, handlers ...interface{}) {
-	r.handle(http.MethodHead, pattern, handlers)
-}
-
-func (r *Router) Trace(pattern string, handlers ...interface{}) {
-	r.handle(http.MethodTrace, pattern, handlers)
 }
 
 func (r *Router) Classic() {
