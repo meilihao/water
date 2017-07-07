@@ -18,6 +18,16 @@ var (
 		http.MethodOptions: 6,
 		http.MethodTrace:   7,
 	}
+	_HTTP_METHODS_NAMES = []string{
+		http.MethodGet,
+		http.MethodPost,
+		http.MethodDelete,
+		http.MethodPut,
+		http.MethodPatch,
+		http.MethodHead,
+		http.MethodOptions,
+		http.MethodTrace,
+	}
 )
 
 func MethodIndex(method string) int {
@@ -140,13 +150,13 @@ var (
 
 func (r *Router) Any(pattern string, handlers ...interface{}) {
 Skip:
-	for m := range _HTTP_METHODS {
+	for _, method := range _HTTP_METHODS_NAMES {
 		for _, v := range MethodAnyExclude {
-			if m == v {
+			if method == v {
 				continue Skip
 			}
 		}
-		r.handle(m, pattern, handlers)
+		r.handle(method, pattern, handlers)
 	}
 }
 

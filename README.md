@@ -89,12 +89,12 @@ func test3(ctx *water.Context) {
 
 output(router tree):
 ```sh
-Raw Router Tree:
+ Raw Router Tree:
 Routers:
 ├── / [GET     : 1]
 ├── /help [GET     : 1]
-├── /about [POST    : 1]
 ├── /about [GET     : 1]
+├── /about [POST    : 1]
 ├── /about [DELETE  : 1]
 ├── /about [PUT     : 1]
 ├── /about [PATCH   : 1]
@@ -105,11 +105,11 @@ Routers:
 │   ├── /<id:int> [GET     : 1]
 │   └── /b
 │       ├──  [GET     : 2]
+│       ├── /2 [GET     : 1]
+│       ├── /2 [POST    : 1]
 │       ├── /2 [DELETE  : 1]
 │       ├── /2 [PUT     : 1]
 │       ├── /2 [PATCH   : 1]
-│       ├── /2 [GET     : 1]
-│       ├── /2 [POST    : 1]
 │       ├── /<id ~ 70|80> [PUT     : 1]
 │       └── /* [GET     : 1]
 ├── /d2/<id ~ z(d*)b> [GET     : 1]
@@ -132,8 +132,8 @@ Routers:
  All Routes:
 (    GET) /
 (    GET) /help
-(   POST) /about
 (    GET) /about
+(   POST) /about
 ( DELETE) /about
 (    PUT) /about
 (  PATCH) /about
@@ -142,11 +142,11 @@ Routers:
 (    GET) /a/1
 (    GET) /a/<id:int>
 (    GET) /a/b
+(    GET) /a/b/2
+(   POST) /a/b/2
 ( DELETE) /a/b/2
 (    PUT) /a/b/2
 (  PATCH) /a/b/2
-(    GET) /a/b/2
-(   POST) /a/b/2
 (    PUT) /a/b/<id ~ 70|80>
 (    GET) /a/b/*
 (    GET) /d2/<id ~ z(d*)b>
