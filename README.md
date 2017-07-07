@@ -177,6 +177,7 @@ There are already some middlewares to simplify your work:
 
 - logger
 - recovery
+- cors
 - [cache](https://github.com/meilihao/water-contrib/tree/master/cache) : [cache-memory](https://github.com/meilihao/water-contrib/tree/master/cache),[cache-ssdb](https://github.com/meilihao/water-contrib/tree/master/cache/ssdb)
 
 ## Getting Help
