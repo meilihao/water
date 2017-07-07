@@ -48,7 +48,7 @@ func (w *water) PrintRawRouter() {
 		panic("print router: no raw router.")
 	}
 
-	fmt.Println("Routers")
+	fmt.Println("Routers:")
 	printRawRouter(w.rootRouter.sub, "")
 }
 

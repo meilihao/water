@@ -134,8 +134,18 @@ func (r *Router) handle(method, pattern string, handlers []interface{}) {
 	r.sub = append(r.sub, rr)
 }
 
+var (
+	MethodAnyExclude = []string{http.MethodHead, http.MethodOptions, http.MethodTrace}
+)
+
 func (r *Router) Any(pattern string, handlers ...interface{}) {
+Skip:
 	for m := range _HTTP_METHODS {
+		for _, v := range MethodAnyExclude {
+			if m == v {
+				continue Skip
+			}
+		}
 		r.handle(m, pattern, handlers)
 	}
 }

@@ -31,7 +31,8 @@ func main() {
 
 	router.Get("/", test)
 	router.Get("/help", test)
-	router.Any("/about", test)
+	router.Any("/about", test) // default Any() exclude ["Head","Options","Trace"]
+	router.Head("/about", test)
 	router.Options("/*")
 
 	router.Group("/a", func(r *water.Router) {
@@ -88,18 +89,16 @@ func test3(ctx *water.Context) {
 
 output(router tree):
 ```sh
- Raw Router Tree:
-Routers
+Raw Router Tree:
+Routers:
 ├── / [GET     : 1]
 ├── /help [GET     : 1]
 ├── /about [POST    : 1]
-├── /about [TRACE   : 1]
 ├── /about [GET     : 1]
+├── /about [DELETE  : 1]
 ├── /about [PUT     : 1]
 ├── /about [PATCH   : 1]
 ├── /about [HEAD    : 1]
-├── /about [OPTIONS : 1]
-├── /about [DELETE  : 1]
 ├── /* [OPTIONS : 0]
 ├── /a
 │   ├── /1 [GET     : 1]
@@ -109,11 +108,8 @@ Routers
 │       ├── /2 [DELETE  : 1]
 │       ├── /2 [PUT     : 1]
 │       ├── /2 [PATCH   : 1]
-│       ├── /2 [HEAD    : 1]
-│       ├── /2 [OPTIONS : 1]
 │       ├── /2 [GET     : 1]
 │       ├── /2 [POST    : 1]
-│       ├── /2 [TRACE   : 1]
 │       ├── /<id ~ 70|80> [PUT     : 1]
 │       └── /* [GET     : 1]
 ├── /d2/<id ~ z(d*)b> [GET     : 1]
@@ -137,13 +133,11 @@ Routers
 (    GET) /
 (    GET) /help
 (   POST) /about
-(  TRACE) /about
 (    GET) /about
+( DELETE) /about
 (    PUT) /about
 (  PATCH) /about
 (   HEAD) /about
-(OPTIONS) /about
-( DELETE) /about
 (OPTIONS) /*
 (    GET) /a/1
 (    GET) /a/<id:int>
@@ -151,11 +145,8 @@ Routers
 ( DELETE) /a/b/2
 (    PUT) /a/b/2
 (  PATCH) /a/b/2
-(   HEAD) /a/b/2
-(OPTIONS) /a/b/2
 (    GET) /a/b/2
 (   POST) /a/b/2
-(  TRACE) /a/b/2
 (    PUT) /a/b/<id ~ 70|80>
 (    GET) /a/b/*
 (    GET) /d2/<id ~ z(d*)b>
