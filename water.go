@@ -28,15 +28,6 @@ func newHandler(handler interface{}) Handler {
 		return h
 	case func(*Context):
 		return HandlerFunc(h)
-		/*	case http.Handler:
-				return HandlerFunc(func(ctx *Context) {
-					h.ServeHTTP(ctx, ctx.Req)
-				})
-			case func(http.ResponseWriter, *http.Request):
-				return HandlerFunc(func(ctx *Context) {
-					h(ctx, ctx.Req)
-				})
-		*/
 	default:
 		panic("unsupported handler")
 	}
