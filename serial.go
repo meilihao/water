@@ -1,6 +1,8 @@
 package water
 
 import (
+	"strings"
+
 	"github.com/satori/go.uuid"
 )
 
@@ -11,5 +13,5 @@ type SerialAdapter interface {
 type DefaultSerial struct{}
 
 func (s DefaultSerial) Id() string {
-	return uuid.NewV1().String()
+	return strings.Replace(uuid.NewV1().String(), "-", "", -1)
 }
