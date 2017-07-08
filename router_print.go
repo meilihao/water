@@ -105,11 +105,18 @@ func printTreeNode(node *node, prefix string) {
 		prefix = strings.Replace(prefix, _PREFIX_LEAF, _PREFIX_EMP, -1)
 	}
 
+	n_ends := len(node.endNodes)
 	for i, n := 0, len(node.subNodes); i < n; i++ {
 		if i == n-1 {
-			printNode(prefix+_PREFIX_BRANCH, node.subNodes[i], false)
+			if n_ends > 0 {
+				printNode(prefix+_PREFIX_BRANCH, node.subNodes[i], false)
 
-			printTreeNode(node.subNodes[i], prefix+_PREFIX_TRUNK)
+				printTreeNode(node.subNodes[i], prefix+_PREFIX_TRUNK)
+			} else {
+				printNode(prefix+_PREFIX_LEAF, node.subNodes[i], false)
+
+				printTreeNode(node.subNodes[i], prefix+_PREFIX_EMP)
+			}
 		} else {
 			printNode(prefix+_PREFIX_BRANCH, node.subNodes[i], false)
 
