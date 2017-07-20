@@ -16,7 +16,6 @@ var (
 		http.MethodPatch:   4,
 		http.MethodHead:    5,
 		http.MethodOptions: 6,
-		http.MethodTrace:   7,
 	}
 	_HTTP_METHODS_NAMES = []string{
 		http.MethodGet,
@@ -26,7 +25,6 @@ var (
 		http.MethodPatch,
 		http.MethodHead,
 		http.MethodOptions,
-		http.MethodTrace,
 	}
 )
 
@@ -46,8 +44,6 @@ func MethodIndex(method string) int {
 		return 5
 	case http.MethodOptions:
 		return 6
-	case http.MethodTrace:
-		return 7
 	default:
 		return -1
 	}
@@ -145,7 +141,7 @@ func (r *Router) handle(method, pattern string, handlers []interface{}) {
 }
 
 var (
-	MethodAnyExclude = []string{http.MethodHead, http.MethodOptions, http.MethodTrace}
+	MethodAnyExclude = []string{http.MethodHead, http.MethodOptions}
 )
 
 func (r *Router) Any(pattern string, handlers ...interface{}) {
@@ -186,10 +182,6 @@ func (r *Router) Options(pattern string, handlers ...interface{}) {
 
 func (r *Router) Head(pattern string, handlers ...interface{}) {
 	r.handle(http.MethodHead, pattern, handlers)
-}
-
-func (r *Router) Trace(pattern string, handlers ...interface{}) {
-	r.handle(http.MethodTrace, pattern, handlers)
 }
 
 func dumpRoute(r *Router, rs *routeStore) {

@@ -31,7 +31,7 @@ func main() {
 
 	router.Get("/", test)
 	router.Get("/help", test)
-	router.Any("/about", test) // default Any() exclude ["Head","Options","Trace"]
+	router.Any("/about", test) // default Any() exclude ["Head","Options"]
 	router.Head("/about", test)
 	router.Options("/*")
 
