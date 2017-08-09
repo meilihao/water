@@ -33,11 +33,8 @@ func newHandler(handler interface{}) Handler {
 
 func newHandlers(handlers []interface{}) (a []Handler) {
 	n := len(handlers)
-	if n == 0 {
-		panic("empty handlers")
-	}
 
-	a = make([]Handler, len(handlers))
+	a = make([]Handler, n)
 	for i, h := range handlers {
 		a[i] = newHandler(h)
 	}
