@@ -158,7 +158,7 @@ func (w *water) log(status int, req *http.Request) {
 		"[ water ]",
 		logStatus(status),
 		time.Now().Sub(start),
-		requestRemoteIp(req),
+		requestRealIp(req),
 		req.Method,
 		req.URL.String(),
 	)

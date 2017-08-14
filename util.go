@@ -28,23 +28,26 @@ func cleanPath(p string) string {
 
 func requestProxy(req *http.Request) []string {
 	if ips := req.Header.Get("X-Forwarded-For"); ips != "" {
-		return strings.Split(ips, ",")
+		return strings.Split(ips, ", ")
 	}
+
 	return nil
 }
 
-func requestRemoteIp(req *http.Request) string {
+func requestRealIp(req *http.Request) string {
 	ip := req.Header.Get("X-Real-IP")
 	if ip == "" {
 		ips := requestProxy(req)
 		if len(ips) > 0 && ips[0] != "" {
 			return ips[0]
 		}
+
 		ip = req.RemoteAddr
 		if i := strings.LastIndex(ip, ":"); i > -1 {
 			ip = ip[:i]
 		}
 	}
+
 	return ip
 }
 

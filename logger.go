@@ -81,7 +81,7 @@ func Logger() HandlerFunc {
 			start.Format(LogTimeFormat),
 			logStatus(ctx.status),
 			time.Now().Sub(start),
-			ctx.RemoteIp(),
+			ctx.RealIp(),
 			ctx.Request.Method,
 			ctx.Request.URL.String(),
 			body,
