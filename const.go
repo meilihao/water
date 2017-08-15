@@ -19,13 +19,19 @@ const (
 )
 
 // HTTP Header Fields, from chrome
+// see https://github.com/teambition/gear/blob/master/const.go
 const (
-	HeaderCacheControl    = "Cache-Control"
-	HeaderContentType     = "Content-Type"
-	HeaderExpires         = "Expires"
-	HeaderUserAgent       = "User-Agent"
-	HeaderXForwardedFor   = "X-Forwarded-For"
-	HeaderXForwardedProto = "X-Forwarded-Proto"
-	HeaderXRealIP         = "X-Real-IP"
-	HeaderXRequestedWith  = "X-Requested-With"
+	HeaderCacheControl = "Cache-Control" // Requests, Responses
+	HeaderContentType  = "Content-Type"  // Requests, Responses
+
+	HeaderUserAgent      = "User-Agent"       // Requests
+	HeaderXRequestedWith = "X-Requested-With" // Requests
+
+	HeaderExpires            = "Expires"             // Responses
+	HeaderContentDisposition = "Content-Disposition" // Responses
+
+	// Common Non-Standard Response Headers
+	HeaderXForwardedFor   = "X-Forwarded-For"   // Requests
+	HeaderXForwardedProto = "X-Forwarded-Proto" // Requests
+	HeaderXRealIP         = "X-Real-IP"         // Requests
 )

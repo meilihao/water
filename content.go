@@ -3,14 +3,14 @@ package water
 import (
 	"encoding/json"
 	"encoding/xml"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"mime/multipart"
 	"net/http"
-	"net/url"
 	"os"
-	"path/filepath"
+	"time"
 
 	"github.com/meilihao/logx"
 )
@@ -83,9 +83,8 @@ func (ctx *Context) Abort(code int) {
 
 // http://stackoverflow.com/questions/49547/making-sure-a-web-page-is-not-cached-across-all-browsers
 func (ctx *Context) NoCache() {
-	header := ctx.Header()
-	header.Set(HeaderCacheControl, "no-cache, max-age=0, s-max-age=0, must-revalidate") // HTTP 1.1
-	header.Set("Expires", "0")                                                          // Proxies.
+	ctx.Header().Set(HeaderCacheControl, "no-cache, max-age=0, s-max-age=0, must-revalidate") // HTTP 1.1
+	ctx.Header().Set("Expires", "0")                                                          // Proxies.
 }
 
 func (ctx *Context) UserAgent() string {
@@ -149,18 +148,41 @@ func (ctx *Context) ServeFile(filePath string) {
 	http.ServeFile(ctx, ctx.Request, filePath)
 }
 
-func (ctx *Context) Download(fpath string) error {
+func (ctx *Context) Download(fpath string, inline ...bool) error {
 	f, err := os.Open(fpath)
 	if err != nil {
 		return err
 	}
 	defer f.Close()
 
-	ctx.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"",
-		url.QueryEscape(filepath.Base(fpath))))
+	fi, err := f.Stat()
+	if err != nil {
+		return err
+	}
 
-	_, err = io.Copy(ctx, f)
-	return err
+	if fi.IsDir() {
+		return errors.New("This is Dir.")
+	}
+
+	dispositionType := "attachment"
+	if len(inline) > 0 && inline[0] {
+		dispositionType = "inline"
+	}
+
+	ctx.Header().Set(HeaderContentDisposition, contentDisposition(fi.Name(), dispositionType))
+	http.ServeContent(ctx, ctx.Request, fi.Name(), fi.ModTime(), f)
+
+	return nil
+}
+
+func (ctx *Context) Attachment(name string, modtime time.Time, content io.ReadSeeker, inline ...bool) {
+	dispositionType := "attachment"
+	if len(inline) > 0 && inline[0] {
+		dispositionType = "inline"
+	}
+
+	ctx.Header().Set(HeaderContentDisposition, contentDisposition(name, dispositionType))
+	http.ServeContent(ctx, ctx.Request, name, modtime, content)
 }
 
 func (ctx *Context) Stream(contentType string, r io.Reader) error {

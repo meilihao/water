@@ -6,8 +6,10 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"path"
 	"strings"
 )
@@ -27,7 +29,7 @@ func cleanPath(p string) string {
 }
 
 func requestProxy(req *http.Request) []string {
-	if ips := req.Header.Get("X-Forwarded-For"); ips != "" {
+	if ips := req.Header.Get(HeaderXForwardedFor); ips != "" {
 		return strings.Split(ips, ", ")
 	}
 
@@ -35,7 +37,7 @@ func requestProxy(req *http.Request) []string {
 }
 
 func requestRealIp(req *http.Request) string {
-	ip := req.Header.Get("X-Real-IP")
+	ip := req.Header.Get(HeaderXRealIP)
 	if ip == "" {
 		ips := requestProxy(req)
 		if len(ips) > 0 && ips[0] != "" {
@@ -49,6 +51,18 @@ func requestRealIp(req *http.Request) string {
 	}
 
 	return ip
+}
+
+func contentDisposition(fileName, dispositionType string) string {
+	if dispositionType == "" {
+		dispositionType = "attachment"
+	}
+	if fileName == "" {
+		return dispositionType
+	}
+
+	return fmt.Sprintf(`%s; filename="%s"; filename*=UTF-8''%s`,
+		dispositionType, url.PathEscape(fileName), url.PathEscape(fileName))
 }
 
 // check pattern segment
