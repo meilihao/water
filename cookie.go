@@ -1,7 +1,6 @@
 package water
 
 import (
-	"encoding/hex"
 	"html/template"
 	"net/http"
 	"strconv"
@@ -108,29 +107,4 @@ func (ctx *Context) SetCookie(name string, value string, others ...interface{}) 
 	}
 
 	ctx.ResponseWriter.Header().Add("Set-Cookie", cookie.String())
-}
-
-func (ctx *Context) SecureCookie(secret, key string) (string, bool) {
-	val := ctx.Cookie(key)
-	if val == "" {
-		return "", false
-	}
-
-	data, err := hex.DecodeString(val)
-	if err != nil {
-		return "", false
-	}
-
-	text, err := AESDecrypt([]byte(secret), data)
-	return string(text), err == nil
-}
-
-// http2 is Recommended
-// 推荐使用http2
-func (ctx *Context) SetSecureCookie(secret, name, value string, others ...interface{}) {
-	text, err := AESEncrypt([]byte(secret), []byte(value))
-	if err != nil {
-		panic("error encrypting cookie: " + err.Error())
-	}
-	ctx.SetCookie(name, hex.EncodeToString(text), others...)
 }
