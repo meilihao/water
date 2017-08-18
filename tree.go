@@ -104,12 +104,12 @@ func analyzePattern(pattern string) (typ byte, rawPattern string, wildcards []st
 
 func (n *node) add(pattern string, handlers []Handler) {
 	if pattern == "/" {
-		if len(n.handlers) != 0 {
-			panic("root's node had set.")
-		}
-
 		n.handlers = handlers
 		return
+	}
+
+	if pattern == "/*" {
+		n.handlers = handlers
 	}
 
 	pattern = strings.TrimSuffix(pattern, "/")
