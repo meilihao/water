@@ -117,6 +117,11 @@ func (ctx *Context) Proxy() []string {
 	return requestProxy(ctx.Request)
 }
 
+// ContentType returns the Content-Type header of the request.
+func (ctx *Context) ContentType() string {
+	return filterFlags(ctx.Request.Header.Get("Content-Type"))
+}
+
 // BodyString returns content of request body in string.
 func (ctx *Context) BodyString() (string, error) {
 	data, err := ctx.BodyBytes()
@@ -257,4 +262,10 @@ func (ctx *Context) IdJson(v interface{}) {
 
 func (ctx *Context) DataJson(v interface{}) {
 	ctx.WriteJson(map[string]interface{}{"data": v})
+}
+
+// HandlerName returns the last handler's name.
+// For example if the handler is "_Users()", this function will return "main._Users".
+func (ctx *Context) HandlerName() string {
+	return nameOfFunction(ctx.handlers[ctx.handlersLength-1])
 }

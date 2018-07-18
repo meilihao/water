@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"net/url"
 	"path"
+	"reflect"
+	"runtime"
 	"strings"
 )
 
@@ -82,4 +84,17 @@ func checkMethod(method string) (string, int) {
 	}
 
 	return method, idx
+}
+
+func filterFlags(content string) string {
+	for i, char := range content {
+		if char == ' ' || char == ';' {
+			return content[:i]
+		}
+	}
+	return content
+}
+
+func nameOfFunction(f interface{}) string {
+	return runtime.FuncForPC(reflect.ValueOf(f).Pointer()).Name()
 }
