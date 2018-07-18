@@ -8,6 +8,7 @@ import (
 )
 
 const (
+	// MaxMultipartMemory
 	DefaultMaxMemory = 10 << 20 // 10MB
 )
 
