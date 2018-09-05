@@ -64,7 +64,7 @@ func main() {
 	fmt.Println("\n\n", "GET's Release Router Tree:")
 	w.PrintRouterTree("GET")
 
-	if err := water.ListenAndServe(":8081", w); err != nil {
+	if err := w.ListenAndServe(":8081"); err != nil {
 		log.Fatalln(err)
 	}
 }
@@ -104,17 +104,17 @@ Routers:
 ├── /about [HEAD    : 1]
 ├── /* [OPTIONS : 0]
 ├── /a
-│   ├── /1 [GET     : 1]
-│   ├── /<id:int> [GET     : 1]
-│   └── /b
-│       ├──  [GET     : 2]
-│       ├── /2 [GET     : 1]
-│       ├── /2 [POST    : 1]
-│       ├── /2 [DELETE  : 1]
-│       ├── /2 [PUT     : 1]
-│       ├── /2 [PATCH   : 1]
-│       ├── /<id ~ 70|80> [PUT     : 1]
-│       └── /* [GET     : 1]
+│   ├── /1 [GET     : 1]
+│   ├── /<id:int> [GET     : 1]
+│   └── /b
+│       ├──  [GET     : 2]
+│       ├── /2 [GET     : 1]
+│       ├── /2 [POST    : 1]
+│       ├── /2 [DELETE  : 1]
+│       ├── /2 [PUT     : 1]
+│       ├── /2 [PATCH   : 1]
+│       ├── /<id ~ 70|80> [PUT     : 1]
+│       └── /* [GET     : 1]
 ├── /d2/<id ~ z(d*)b> [GET     : 1]
 └── /d2/<id1+id2 ~ z(d*)h(u)b> [GET     : 1]
 
@@ -159,15 +159,15 @@ Routers:
  GET's Release Router Tree:
 / [2]
 ├── a
-│   ├── b
-│   │   ├── 2 [3]
-│   │   └── * [3]
-│   ├── 1 [3]
-│   ├── b [4]
-│   └── <id:int> [3]
+│   ├── b
+│   │   ├── 2 [3]
+│   │   └── * [3]
+│   ├── 1 [3]
+│   ├── b [4]
+│   └── <id:int> [3]
 ├── d2
-│   ├── <id ~ z(d*)b> [2]
-│   └── <id1+id2 ~ z(d*)h(u)b> [2]
+│   ├── <id ~ z(d*)b> [2]
+│   └── <id1+id2 ~ z(d*)h(u)b> [2]
 ├── help [2]
 └── about [2]
 ```

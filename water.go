@@ -42,14 +42,6 @@ func newHandlers(handlers []interface{}) (a []Handler) {
 	return a
 }
 
-func ListenAndServe(addr string, handler http.Handler) error {
-	return http.ListenAndServe(addr, handler)
-}
-
-func ListenAndServeTLS(addr, certFile, keyFile string, handler http.Handler) error {
-	return http.ListenAndServeTLS(addr, certFile, keyFile, handler)
-}
-
 // --- water ---
 
 type water struct {
@@ -128,6 +120,14 @@ func (w *water) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	ctx.run()
 
 	w.ctxPool.Put(ctx)
+}
+
+func (w *water) ListenAndServe(addr string) error {
+	return http.ListenAndServe(addr, w)
+}
+
+func (w *water) ListenAndServeTLS(addr, certFile, keyFile string) error {
+	return http.ListenAndServeTLS(addr, certFile, keyFile, w)
 }
 
 func (w *water) buildTree() {
