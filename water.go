@@ -42,22 +42,23 @@ func newHandlers(handlers []interface{}) (a []Handler) {
 	return a
 }
 
-// --- water ---
+// BeforeHandler represents a handler executes at beginning of every request.
+// Water stops future process when it returns true.
+type BeforeHandler func(http.ResponseWriter, *http.Request) bool
 
+// --- water ---
 type water struct {
-	rootRouter        *Router
-	routers           [8]*node
-	routeStore        *routeStore
-	serial            SerialAdapter
-	ctxPool           sync.Pool
-	RedirectFixedPath bool
+	rootRouter *Router
+	routers    [8]*node
+	routeStore *routeStore
+	ctxPool    sync.Pool
+
+	BeforeHandlers []BeforeHandler
 }
 
 func newWater() *water {
 	w := &water{
-		routers:           [8]*node{},
-		serial:            nil,
-		RedirectFixedPath: true,
+		routers: [8]*node{},
 	}
 
 	w.ctxPool.New = func() interface{} {
@@ -67,10 +68,6 @@ func newWater() *water {
 	return w
 }
 
-func (w *water) SetSerialAdapter(sa SerialAdapter) {
-	w.serial = sa
-}
-
 func (w *water) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	if !req.ProtoAtLeast(1, 1) || req.RequestURI == "*" || req.Method == "CONNECT" {
 		w.log(http.StatusBadRequest, req)
@@ -78,13 +75,11 @@ func (w *water) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	if w.RedirectFixedPath {
-		if p := cleanPath(req.URL.Path); p != req.URL.Path {
-			u := *req.URL
-			u.Path = p
-			w.log(http.StatusMovedPermanently, req)
-			http.Redirect(rw, req, u.String(), http.StatusMovedPermanently)
-			return
+	if len(w.BeforeHandlers)>0 {
+		for _, h := range w.BeforeHandlers {
+			if h(rw, req) {
+				return
+			}
 		}
 	}
 
@@ -112,10 +107,6 @@ func (w *water) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	ctx.Request = req
 	ctx.handlers = handlerChain
 	ctx.handlersLength = len(handlerChain)
-
-	if w.serial != nil {
-		ctx.Id = w.serial.Id()
-	}
 
 	ctx.run()
 

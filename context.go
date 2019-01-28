@@ -24,8 +24,6 @@ type Context struct {
 
 	written bool
 	status  int
-
-	Id string
 }
 
 type ResponseWriter interface {
