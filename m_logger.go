@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"net/http"
 	"strings"
 	"time"
 
@@ -45,8 +46,8 @@ func logStatus(status int) string {
 	}
 }
 
-func logPrefix(ctx *Context) string {
-	return "[ water : " + ctx.Request.Header.Get("Trace-ID") + " ]"
+func logPrefix(req *http.Request) string {
+	return "[ water : " + req.Header.Get("Trace-ID") + " ]"
 }
 
 func Logger() HandlerFunc {
@@ -73,7 +74,7 @@ func Logger() HandlerFunc {
 
 		// Layout : "prefix start_time [ status ] used_time | ip | method path"
 		logx.Infof("%s %v |%s| %13v | %16s | %7s %s%s",
-			logPrefix(ctx),
+			logPrefix(ctx.Request),
 			start.Format(LogTimeFormat),
 			logStatus(ctx.status),
 			time.Now().Sub(start),

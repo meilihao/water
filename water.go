@@ -146,7 +146,7 @@ func (w *water) log(status int, req *http.Request) {
 
 	start := time.Now()
 	logx.Infof("%s |%s| %13v | %16s | %7s %s",
-		"[ water ]",
+		logPrefix(req),
 		logStatus(status),
 		time.Now().Sub(start),
 		requestRealIp(req),
