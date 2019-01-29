@@ -134,21 +134,3 @@ func (w *water) buildTree() {
 		}
 	}
 }
-
-// handle log before invoke Logger()
-// 处理调用Logger()前的日志
-func (w *water) log(status int, req *http.Request) {
-	if LogClose {
-		return
-	}
-
-	start := time.Now()
-	logx.Infof("%s |%s| %13v | %16s | %7s %s",
-		logPrefix(req),
-		logStatus(status),
-		time.Now().Sub(start),
-		requestRealIp(req),
-		req.Method,
-		req.URL.String(),
-	)
-}
