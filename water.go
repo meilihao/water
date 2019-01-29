@@ -74,18 +74,18 @@ func (w *water) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	index := MethodIndex(req.Method)
+	if index < 0 {
+		rw.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
 	if len(w.BeforeHandlers)>0 {
 		for _, h := range w.BeforeHandlers {
 			if h(rw, req) {
 				return
 			}
 		}
-	}
-
-	index := MethodIndex(req.Method)
-	if index < 0 {
-		rw.WriteHeader(http.StatusMethodNotAllowed)
-		return
 	}
 
 	handlerChain, params, ok := w.routers[index].Match(req.URL.Path)
