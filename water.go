@@ -42,7 +42,7 @@ func newHandlers(handlers []interface{}) (a []Handler) {
 	return a
 }
 
-// BeforeHandler represents a handler executes at beginning of every request.
+// BeforeHandler represents a handler executes at beginning of every request(before HandlerFuncs).
 // Water stops future process when it returns true.
 type BeforeHandler func(http.ResponseWriter, *http.Request) bool
 

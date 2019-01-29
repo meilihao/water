@@ -46,11 +46,7 @@ func logStatus(status int) string {
 }
 
 func logPrefix(ctx *Context) string {
-	if ctx.Id == "" {
-		return "[ water : ]"
-	} else {
-		return "[ water : " + ctx.Id + " ]"
-	}
+	return "[ water : " + ctx.Request.Header.Get("Trace-ID") + " ]"
 }
 
 func Logger() HandlerFunc {
