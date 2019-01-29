@@ -8,6 +8,12 @@ import (
 	"reflect"
 	"runtime"
 	"strings"
+
+	"github.com/json-iterator/go"
+)
+
+var (
+	json = jsoniter.ConfigCompatibleWithStandardLibrary
 )
 
 // from net/http

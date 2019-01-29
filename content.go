@@ -1,7 +1,6 @@
 package water
 
 import (
-	"encoding/json"
 	"encoding/xml"
 	"errors"
 	"fmt"
