@@ -80,7 +80,7 @@ func (w *water) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	if len(w.BeforeHandlers)>0 {
+	if len(w.BeforeHandlers) > 0 {
 		for _, h := range w.BeforeHandlers {
 			if h(rw, req) {
 				return
@@ -133,4 +133,22 @@ func (w *water) buildTree() {
 			w.routers[MethodIndex(v.method)] = t
 		}
 	}
+}
+
+// handle log before invoke Logger()
+// 处理调用Logger()前的日志
+func (w *water) log(status int, req *http.Request) {
+	if LogClose {
+		return
+	}
+
+	start := time.Now()
+	logx.Infof("%s |%s| %13v | %16s | %7s %s",
+		logPrefix(req),
+		logStatus(status),
+		time.Now().Sub(start),
+		requestRealIp(req),
+		req.Method,
+		req.URL.String(),
+	)
 }
