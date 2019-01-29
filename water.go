@@ -70,8 +70,7 @@ func newWater() *water {
 
 func (w *water) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	if !req.ProtoAtLeast(1, 1) || req.RequestURI == "*" || req.Method == "CONNECT" {
-		w.log(http.StatusBadRequest, req)
-		rw.WriteHeader(http.StatusBadRequest)
+		rw.WriteHeader(http.StatusNotAcceptable)
 		return
 	}
 
@@ -85,7 +84,6 @@ func (w *water) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 
 	index := MethodIndex(req.Method)
 	if index < 0 {
-		w.log(http.StatusMethodNotAllowed, req)
 		rw.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}
