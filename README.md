@@ -191,3 +191,19 @@ There are already some middlewares to simplify your work:
 ## License
 
 This project is under BSD License.
+
+## issue
+1. prefix path not exist
+	```go
+	router := water.NewRouter()
+	router.Any("/about", test)
+	```
+
+	```bash
+	# curl -X POST -i http://localhost:8081 --data '{"user":"root"}' # need return 404
+	HTTP/1.1 200 OK
+	Date: Mon, 07 Sep 2020 10:24:26 GMT
+	Content-Length: 0
+	```
+
+	TODO: use virtual tree node
