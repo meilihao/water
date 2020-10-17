@@ -8,8 +8,9 @@ import (
 	"reflect"
 	"runtime"
 	"strings"
+	"time"
 
-	"github.com/json-iterator/go"
+	jsoniter "github.com/json-iterator/go"
 )
 
 var (
@@ -103,4 +104,10 @@ func filterFlags(content string) string {
 
 func nameOfFunction(f interface{}) string {
 	return runtime.FuncForPC(reflect.ValueOf(f).Pointer()).Name()
+}
+
+// GenerateETag generates an ETag based on file modification time and size
+// from http://lxr.nginx.org/ident?_i=ngx_http_set_etag
+func GenerateETag(lastModified time.Time, size int64) string {
+	return fmt.Sprintf("%x-%x", lastModified.Unix(), size)
 }
