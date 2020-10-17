@@ -105,7 +105,7 @@ type Router struct {
 }
 
 func NewRouter() *Router {
-	return new(Router)
+	return &Router{}
 }
 
 func (r *Router) Group(pattern string, fn func(*Router)) {
