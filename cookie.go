@@ -49,8 +49,10 @@ func (ctx *Context) CookieFloat64(name string) float64 {
 	return v
 }
 
-// name/value escape before SetCookie() if necessary
+// name/value escape by url.QueryEscape() before SetCookie() if necessary
 // others... : MaxAge, Path, Domain, Secure, HttpOnly, SameSite.
+// The provided cookie must have a valid Name. Invalid cookies may be
+// silently dropped.
 func (ctx *Context) SetCookie(name string, value string, others ...interface{}) {
 	cookie := http.Cookie{}
 	cookie.Name = name
