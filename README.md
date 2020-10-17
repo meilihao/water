@@ -31,7 +31,7 @@ func main() {
 
 	router.Get("/", test)
 	router.Get("/help", test)
-	router.Any("/about", test) // default Any() exclude ["Head","Options"]
+	router.Any("/about", test)
 	router.Head("/about", test)
 	router.Options("/*")
 
@@ -183,6 +183,9 @@ There are already some middlewares to simplify your work:
 - cors
 - [cache](https://github.com/meilihao/water-contrib/tree/master/cache) : [cache-memory](https://github.com/meilihao/water-contrib/tree/master/cache),[cache-ssdb](https://github.com/meilihao/water-contrib/tree/master/cache/ssdb)
 - [reqestDump](https://github.com/meilihao/water-contrib/tree/master/debug)
+
+## Router
+- default Any() exclude ["Head","Options"], but can reset by `water.MethodAnyExclude`
 
 ## Getting Help
 
