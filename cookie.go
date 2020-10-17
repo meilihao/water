@@ -50,7 +50,7 @@ func (ctx *Context) CookieFloat64(name string) float64 {
 }
 
 // name/value escape before SetCookie() if necessary
-// others... : MaxAge, Path, Domain, Secure, HttpOnly.
+// others... : MaxAge, Path, Domain, Secure, HttpOnly, SameSite.
 func (ctx *Context) SetCookie(name string, value string, others ...interface{}) {
 	cookie := http.Cookie{}
 	cookie.Name = name
@@ -94,6 +94,21 @@ func (ctx *Context) SetCookie(name string, value string, others ...interface{}) 
 	if len(others) > 4 {
 		if v, ok := others[4].(bool); ok && v {
 			cookie.HttpOnly = true
+		}
+	}
+
+	if len(others) > 5 {
+		switch v := others[5].(type) {
+		case bool:
+			if v {
+				cookie.SameSite = http.SameSiteStrictMode
+			} else {
+				cookie.SameSite = http.SameSiteLaxMode
+			}
+		default:
+			if others[5] != nil {
+				cookie.SameSite = http.SameSiteLaxMode
+			}
 		}
 	}
 
