@@ -100,7 +100,7 @@ func (ctx *Context) SetCookie(name string, value string, others ...interface{}) 
 	}
 
 	if len(others) > 5 {
-		if v := others[5].(http.SameSite); ok {
+		if ok := others[5].(http.SameSite); ok {
 			cookie.SameSite = v
 		}
 	}
