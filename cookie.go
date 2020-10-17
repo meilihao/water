@@ -100,17 +100,8 @@ func (ctx *Context) SetCookie(name string, value string, others ...interface{}) 
 	}
 
 	if len(others) > 5 {
-		switch v := others[5].(type) {
-		case bool:
-			if v {
-				cookie.SameSite = http.SameSiteStrictMode
-			} else {
-				cookie.SameSite = http.SameSiteLaxMode
-			}
-		default:
-			if others[5] != nil {
-				cookie.SameSite = http.SameSiteLaxMode
-			}
+		if v := others[5].(http.SameSite); ok {
+			cookie.SameSite = v
 		}
 	}
 
