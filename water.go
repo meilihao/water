@@ -88,6 +88,8 @@ func (w *water) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		}
 	}
 
+	// maybe need fast match for static routes by rwlock + map
+
 	handlerChain, params, ok := w.routers[index].Match(req.URL.Path)
 	if !ok {
 		w.log(http.StatusNotFound, req)
