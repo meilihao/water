@@ -14,7 +14,7 @@ const (
 
 // parseFormOrMultipartForm parses the raw query from the URL.
 func (ctx *Context) parseFormOrMultipartForm() error {
-	if strings.Contains(ctx.Request.Header.Get("Content-Type"), "multipart/form-data") {
+	if (ctx.Req.Method == "POST" || ctx.Req.Method == "PUT") && strings.Contains(ctx.Request.Header.Get("Content-Type"), "multipart/form-data") {
 		if err := ctx.Request.ParseMultipartForm(DefaultMaxMemory); err != nil {
 			return errors.New("parseMultipartForm error:" + err.Error())
 		}
