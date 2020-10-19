@@ -90,6 +90,7 @@ func (w *water) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 
 	// maybe need fast match for static routes by rwlock + map
 
+	// curl http://localhost:8081 or http://localhost:8081/ -> req.URL.Path=="/"
 	handlerChain, params, ok := w.routers[index].Match(req.URL.Path)
 	if !ok || len(handlerChain) == 0 {
 		w.log(http.StatusNotFound, req)
