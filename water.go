@@ -48,17 +48,19 @@ type BeforeHandler func(http.ResponseWriter, *http.Request) bool
 
 // --- water ---
 type water struct {
-	rootRouter *Router
-	routers    [8]*node
-	routeStore *routeStore
-	ctxPool    sync.Pool
+	rootRouter    *Router
+	routers       [8]*node
+	routersStatic [8]map[string]*node
+	routeStore    *routeStore
+	ctxPool       sync.Pool
 
 	BeforeHandlers []BeforeHandler
 }
 
 func newWater() *water {
 	w := &water{
-		routers: [8]*node{},
+		routers:       [8]*node{},
+		routersStatic: [8]map[string]*node{},
 	}
 
 	w.ctxPool.New = func() interface{} {
@@ -88,11 +90,20 @@ func (w *water) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		}
 	}
 
-	// maybe need fast match for static routes by rwlock + map
+	var handlerChain []Handler
+	var params Params
+	var found bool
 
-	// curl http://localhost:8081 or http://localhost:8081/ -> req.URL.Path=="/"
-	handlerChain, params, ok := w.routers[index].Match(req.URL.Path)
-	if !ok || len(handlerChain) == 0 {
+	// fast match for static routes
+	if node := w.routersStatic[index][req.URL.Path]; node != nil {
+		handlerChain = node.handlers
+		found = true
+	} else {
+		// curl http://localhost:8081 or http://localhost:8081/ -> req.URL.Path=="/"
+		handlerChain, params, found = w.routers[index].Match(req.URL.Path)
+	}
+
+	if !found {
 		w.log(http.StatusNotFound, req)
 		rw.WriteHeader(http.StatusNotFound)
 		return
@@ -123,19 +134,40 @@ func (w *water) ListenAndServeTLS(addr, certFile, keyFile string) error {
 }
 
 func (w *water) buildTree() {
+	var endNode *node
+
 	for _, v := range w.routeStore.routeSlice {
 		if !(v.uri == "/" || checkSplitPattern(v.uri)) {
 			panic(fmt.Sprintf("invalid route : [%s : %s]", v.method, v.uri))
 		}
 
 		if t := w.routers[MethodIndex(v.method)]; t != nil {
-			t.add(v.uri, v.handlers)
+			endNode = t.add(v.uri, v.handlers)
 		} else {
 			t := newTree()
-			t.add(v.uri, v.handlers)
+			endNode = t.add(v.uri, v.handlers)
 			w.routers[MethodIndex(v.method)] = t
 		}
+
+		if isStaticRoute(endNode) {
+			if w.routersStatic[MethodIndex(v.method)] == nil {
+				w.routersStatic[MethodIndex(v.method)] = map[string]*node{}
+			}
+			w.routersStatic[MethodIndex(v.method)][v.uri] = endNode
+		}
 	}
+}
+
+func isStaticRoute(node *node) bool {
+	if node == nil {
+		return true
+	}
+
+	if node.typ != _PATTERN_STATIC {
+		return false
+	}
+
+	return isStaticRoute(node.parent)
 }
 
 // handle log before invoke Logger()

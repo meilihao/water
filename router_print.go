@@ -48,7 +48,6 @@ func (w *water) PrintRawRouter() {
 		panic("print router: no raw router.")
 	}
 
-	fmt.Println("Routers:")
 	printRawRouter(w.rootRouter.sub, "")
 }
 
@@ -57,6 +56,10 @@ func (w *water) PrintRawRouter() {
 func (w *water) PrintRawRoutes(method string) {
 	method, _ = checkMethod(method)
 	routes := w.routeStore.routeMap[method]
+	if len(routes) == 0 {
+		fmt.Printf("%s\n", "no route")
+		return
+	}
 
 	list := make([]string, 0, len(routes))
 	for k := range routes {
@@ -87,8 +90,12 @@ func (w *water) PrintRawAllRoutes() {
 func (w *water) PrintRouterTree(method string) {
 	_, idx := checkMethod(method)
 	tree := w.routers[idx]
+	if tree == nil {
+		fmt.Printf("%s\n", "no route")
+		return
+	}
 
-	fmt.Printf("%s [%d]\n", tree.pattern, len(tree.handlers))
+	fmt.Printf("%s [%d]\n", "/", len(tree.handlers))
 	printTreeNode(tree, "")
 }
 

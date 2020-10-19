@@ -19,41 +19,40 @@ type node struct {
 	subNodes []*node
 	endNodes []*node
 
-	typ        byte
-	pattern    string // origial pattern
-	rawPattern string // pattern, not include : regexp,holder
-	wildcards  []string
-	reg        *regexp.Regexp
+	typ           byte
+	pattern       string // origial pattern
+	parsedPattern string // pattern, only include regexp/holder's parms
+	wildcards     []string
+	reg           *regexp.Regexp
 
 	handlers []Handler
 }
 
 func newTree() *node {
-	return newNode(nil, "/", nil)
+	return newNode(nil, "")
 }
 
-func newNode(parent *node, pattern string, handlers []Handler) *node {
-	typ, rawPattern, wildcards, reg := analyzePattern(pattern)
+func newNode(parent *node, pattern string) *node {
+	typ, parsedPattern, wildcards, reg := analyzePattern(pattern)
 
 	return &node{
-		parent:     parent,
-		typ:        typ,
-		pattern:    pattern,
-		rawPattern: rawPattern,
-		wildcards:  wildcards,
-		reg:        reg,
-		handlers:   handlers,
+		parent:        parent,
+		typ:           typ,
+		pattern:       pattern,
+		parsedPattern: parsedPattern,
+		wildcards:     wildcards,
+		reg:           reg,
 	}
 }
 
-func getRawPattern(pattern string) string {
+func getparsedPattern(pattern string) string {
 	if !strings.ContainsAny(pattern, "<>") {
 		return pattern // _PATTERN_STATIC or _PATTERN_MATCH_ALL
 	}
 
 	startIdx := strings.Index(pattern, "<")   //start mark
 	endIdx := strings.LastIndex(pattern, ">") //end mark
-	if !(startIdx == 0 && endIdx > -1) {
+	if !(startIdx == 0 && endIdx == len(pattern)-1) {
 		panic(fmt.Sprintf("invalid pattern[%s] without correct format.", pattern))
 	}
 
@@ -67,75 +66,88 @@ func getRawPattern(pattern string) string {
 		closeIdx = regStartIdx
 	}
 
-	return "<" + strings.TrimSpace(pattern[startIdx+1:closeIdx]) + ">"
-}
-
-func partternRegexp(pattern string) string {
-	startIdx := strings.Index(pattern, "~")
-	closeIdx := strings.Index(pattern, ">")
-
 	return strings.TrimSpace(pattern[startIdx+1 : closeIdx])
 }
 
-func analyzePattern(pattern string) (typ byte, rawPattern string, wildcards []string, reg *regexp.Regexp) {
-	if pattern != strings.TrimSpace(pattern) {
-		panic(fmt.Sprintf("invalid pattern[%s],it may contain spaces, and so on. ", pattern))
+func partternRegexp(pattern string, want int) (string, error) {
+	if want == 0 {
+		return "", fmt.Errorf("named args need >= 1")
 	}
 
-	rawPattern = getRawPattern(pattern)
+	startIdx := strings.Index(pattern, "~")
+	closeIdx := strings.Index(pattern, ">")
+
+	regExp := strings.TrimSpace(pattern[startIdx+1 : closeIdx])
+	if strings.ContainsAny(pattern, "()") && !(strings.Count(regExp, "(") == want && strings.Count(regExp, "(") == strings.Count(regExp, ")")) {
+		return "", fmt.Errorf("regexp group count not match want(%d)", want)
+	}
+
+	return regExp, nil
+}
+
+func analyzePattern(pattern string) (typ byte, parsedPattern string, wildcards []string, reg *regexp.Regexp) {
+	if pattern != strings.TrimSpace(pattern) {
+		panic(fmt.Sprintf("invalid pattern[%s],it may contain spaces, and so on.", pattern))
+	}
+
+	parsedPattern = getparsedPattern(pattern)
 
 	if pattern == "*" {
 		typ = _PATTERN_MATCH_ALL
 	} else if strings.Contains(pattern, "<") {
-		wildcards = strings.Split(strings.TrimPrefix(strings.TrimSuffix(rawPattern, ">"), "<"), "+")
+		wildcards = getWildcards(parsedPattern)
 
 		if strings.Contains(pattern, "~") {
 			typ = _PATTERN_REGEXP
 
-			reg = regexp.MustCompile(partternRegexp(pattern))
+			regExp, err := partternRegexp(pattern, len(wildcards))
+			if err != nil {
+				panic(fmt.Sprintf("invalid regexp pattern[%s], err: %s", pattern, err.Error()))
+			}
+			reg = regexp.MustCompile(regExp)
 		} else {
 			typ = _PATTERN_HOLDER
 		}
 	}
-	return typ, rawPattern, wildcards, reg
+	return typ, parsedPattern, wildcards, reg
+}
+
+func getWildcards(pattern string) []string {
+	ls := strings.Split(pattern, "+")
+	for i := range ls {
+		ls[i] = strings.TrimSpace(ls[i])
+	}
+
+	return ls
 }
 
 // --- build tree
 
-func (n *node) add(pattern string, handlers []Handler) {
-	if pattern == "/" {
-		n.handlers = handlers
-		return
-	}
-
-	if pattern == "/*" {
-		n.handlers = handlers
-	}
-
+func (n *node) add(pattern string, handlers []Handler) *node {
 	pattern = strings.TrimSuffix(pattern, "/")
-	n.addNextSegment(pattern, handlers)
+	return n.addNextSegment(pattern, handlers)
 }
 
-func (n *node) addNextSegment(pattern string, handlers []Handler) {
+func (n *node) addNextSegment(pattern string, handlers []Handler) *node {
 	pattern = strings.TrimPrefix(pattern, "/")
 
 	i := strings.Index(pattern, "/")
 	if i == -1 {
-		n.addEndNode(pattern, handlers)
-		return
+		return n.addEndNode(pattern, handlers)
 	}
-	n.addSubNode(pattern[:i], pattern[i+1:], handlers)
+
+	return n.addSubNode(pattern[:i], pattern[i+1:], handlers)
 }
 
-func (n *node) addEndNode(pattern string, handlers []Handler) {
-	rawPattern := getRawPattern(pattern)
+func (n *node) addEndNode(pattern string, handlers []Handler) *node {
 	for i := 0; i < len(n.endNodes); i++ {
-		if n.endNodes[i].rawPattern == rawPattern { // added
-			return
+		if n.endNodes[i].pattern == pattern { // added
+			return n.endNodes[i]
 		}
 	}
 
-	end := newNode(n, pattern, handlers)
+	end := newNode(n, pattern)
+	end.handlers = handlers
 
 	i := 0
 	for ; i < len(n.endNodes); i++ {
@@ -149,18 +161,18 @@ func (n *node) addEndNode(pattern string, handlers []Handler) {
 	} else {
 		n.endNodes = append(n.endNodes[:i], append([]*node{end}, n.endNodes[i:]...)...)
 	}
+
+	return end
 }
 
-func (n *node) addSubNode(segment, pattern string, handlers []Handler) {
-	rawSegment := getRawPattern(segment)
+func (n *node) addSubNode(segment, pattern string, handlers []Handler) *node {
 	for i := 0; i < len(n.subNodes); i++ {
-		if n.subNodes[i].rawPattern == rawSegment {
-			n.subNodes[i].addNextSegment(pattern, handlers)
-			return
+		if n.subNodes[i].pattern == segment {
+			return n.subNodes[i].addNextSegment(pattern, handlers)
 		}
 	}
 
-	sub := newNode(n, segment, nil)
+	sub := newNode(n, segment)
 
 	i := 0
 	for ; i < len(n.subNodes); i++ {
@@ -175,21 +187,12 @@ func (n *node) addSubNode(segment, pattern string, handlers []Handler) {
 		n.subNodes = append(n.subNodes[:i], append([]*node{sub}, n.subNodes[i:]...)...)
 	}
 
-	sub.addNextSegment(pattern, handlers)
+	return sub.addNextSegment(pattern, handlers)
 }
 
 // --- match uri
 
 func (n *node) Match(uri string) ([]Handler, Params, bool) {
-	// no method
-	if n == nil {
-		return nil, nil, false
-	}
-
-	if uri == "/" {
-		return n.handlers, nil, true
-	}
-
 	uri = strings.TrimPrefix(uri, "/")
 	uri = strings.TrimSuffix(uri, "/")
 	params := make(Params)
@@ -214,6 +217,7 @@ func (n *node) matchEndNode(globLevel int, uri string, params Params) ([]Handler
 			}
 		case _PATTERN_REGEXP:
 			results := n.endNodes[i].reg.FindStringSubmatch(uri)
+			// Number of results and wildcasrd should be exact same
 			if len(results)-1 != len(n.endNodes[i].wildcards) {
 				continue
 			}
