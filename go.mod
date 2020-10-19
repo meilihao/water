@@ -1,4 +1,4 @@
-module water
+module github.com/meilihao/water
 
 go 1.15
 
