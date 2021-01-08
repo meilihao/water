@@ -39,6 +39,7 @@ func requestProxy(req *http.Request) []string {
 	return nil
 }
 
+// see more detail in github.com/minio/minio/pkg/handlers/proxy.go
 func requestRealIp(req *http.Request) string {
 	ip := req.Header.Get(HeaderXRealIP)
 	if ip == "" {
