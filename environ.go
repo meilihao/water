@@ -54,3 +54,20 @@ func (m Environ) Has(name string) bool {
 	_, ok := m[name]
 	return ok
 }
+
+// Set is used to store a new key/value pair exclusively for this context.
+func (c *Context) Set(name string, value interface{}) {
+	if c.Environ.Has(name) {
+		panic("double Environ: " + name)
+	} else {
+		c.Environ[name] = value
+	}
+}
+
+// Get returns the value for the given name if it exists, otherwise it panics.
+func (c *Context) Get(name string) interface{} {
+	if value, exists := c.Environ[name]; exists {
+		return value
+	}
+	panic("Environ not exist: " + name)
+}
