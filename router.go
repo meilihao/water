@@ -144,7 +144,7 @@ var (
 	MethodAnyExclude = []string{http.MethodHead, http.MethodOptions}
 )
 
-func (r *Router) Any(pattern string, handlers ...interface{}) {
+func (r *Router) ANY(pattern string, handlers ...interface{}) {
 Skip:
 	for _, method := range _HTTP_METHODS_NAMES {
 		for _, v := range MethodAnyExclude {
@@ -156,31 +156,31 @@ Skip:
 	}
 }
 
-func (r *Router) Get(pattern string, handlers ...interface{}) {
+func (r *Router) GET(pattern string, handlers ...interface{}) {
 	r.handle(http.MethodGet, pattern, handlers)
 }
 
-func (r *Router) Post(pattern string, handlers ...interface{}) {
+func (r *Router) POST(pattern string, handlers ...interface{}) {
 	r.handle(http.MethodPost, pattern, handlers)
 }
 
-func (r *Router) Put(pattern string, handlers ...interface{}) {
+func (r *Router) PUT(pattern string, handlers ...interface{}) {
 	r.handle(http.MethodPut, pattern, handlers)
 }
 
-func (r *Router) Patch(pattern string, handlers ...interface{}) {
+func (r *Router) PATCH(pattern string, handlers ...interface{}) {
 	r.handle(http.MethodPatch, pattern, handlers)
 }
 
-func (r *Router) Delete(pattern string, handlers ...interface{}) {
+func (r *Router) DELETE(pattern string, handlers ...interface{}) {
 	r.handle(http.MethodDelete, pattern, handlers)
 }
 
-func (r *Router) Options(pattern string, handlers ...interface{}) {
+func (r *Router) OPTIONS(pattern string, handlers ...interface{}) {
 	r.handle(http.MethodOptions, pattern, handlers)
 }
 
-func (r *Router) Head(pattern string, handlers ...interface{}) {
+func (r *Router) HEAD(pattern string, handlers ...interface{}) {
 	r.handle(http.MethodHead, pattern, handlers)
 }
 
