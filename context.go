@@ -28,6 +28,7 @@ type Context struct {
 
 type ResponseWriter interface {
 	http.ResponseWriter
+	//http.CloseNotifier
 	//http.Flusher
 	//http.Hijacker
 }
