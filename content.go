@@ -257,3 +257,21 @@ func (ctx *Context) DecodeXml(v interface{}) error {
 func (ctx *Context) HandlerName() string {
 	return nameOfFunction(ctx.handlers[ctx.handlersLength-1])
 }
+
+type NotFoundHandler struct {
+	FileServer http.Handler
+	FilterPath func(string) string
+}
+
+func NewDefaultNotFoundHandler(root string) *NotFoundHandler {
+	return &NotFoundHandler{
+		FileServer: http.FileServer(http.Dir(root)),
+	}
+}
+
+func (h *NotFoundHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if h.FilterPath != nil {
+		r.URL.Path = h.FilterPath(r.URL.Path)
+	}
+	h.FileServer.ServeHTTP(w, r)
+}

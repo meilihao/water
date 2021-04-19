@@ -55,6 +55,7 @@ type Engine struct {
 	ctxPool       sync.Pool
 
 	// BeforeHandlers []BeforeHandler
+	notfoundHandler http.Handler
 }
 
 func newWater() *Engine {
@@ -68,6 +69,12 @@ func newWater() *Engine {
 	}
 
 	return e
+}
+
+// SetNoFoundHandler the handler for no match route
+// for vue spa
+func (e *Engine) SetNoFoundHandler(h http.Handler) {
+	e.notfoundHandler = h
 }
 
 func (e *Engine) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
@@ -104,8 +111,11 @@ func (e *Engine) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	if !found {
-		e.log(http.StatusNotFound, req)
-		rw.WriteHeader(http.StatusNotFound)
+		if e.notfoundHandler != nil {
+			e.notfoundHandler.ServeHTTP(rw, req)
+		} else {
+			rw.WriteHeader(http.StatusNotFound)
+		}
 		return
 	}
 
