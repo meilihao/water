@@ -3,7 +3,6 @@ package water
 import (
 	"encoding/xml"
 	"errors"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"mime/multipart"
@@ -14,6 +13,8 @@ import (
 
 	"github.com/meilihao/logx"
 )
+
+type H map[string]interface{}
 
 func (ctx *Context) GetHeader(key string) string {
 	return ctx.Request.Header.Get(key)
@@ -207,17 +208,20 @@ func (ctx *Context) Stream(contentType string, r io.Reader) error {
 	return err
 }
 
-func (ctx *Context) WriteString(str string) {
+func (ctx *Context) String(code int, str string) {
+	ctx.WriteHeader(code)
 	ctx.Header().Set(HeaderContentType, MIMETextPlainCharsetUTF8)
 	ctx.Write([]byte(str))
 }
 
-func (ctx *Context) WriteHTML(str string) {
+func (ctx *Context) HTML(code int, str string) {
+	ctx.WriteHeader(code)
 	ctx.Header().Set(HeaderContentType, MIMETextHTMLCharsetUTF8)
 	ctx.Write([]byte(str))
 }
 
-func (ctx *Context) WriteJson(v interface{}) error {
+func (ctx *Context) JSON(code int, v interface{}) error {
+	ctx.WriteHeader(code)
 	ctx.Header().Set(HeaderContentType, MIMEApplicationJSONCharsetUTF8)
 	err := json.NewEncoder(ctx).Encode(v)
 	if err != nil {
@@ -226,7 +230,8 @@ func (ctx *Context) WriteJson(v interface{}) error {
 	return err
 }
 
-func (ctx *Context) WriteXml(v interface{}) error {
+func (ctx *Context) XML(code int, v interface{}) error {
+	ctx.WriteHeader(code)
 	ctx.Header().Set(HeaderContentType, MIMEApplicationXMLCharsetUTF8)
 	err := xml.NewEncoder(ctx).Encode(v)
 	if err != nil {
@@ -245,22 +250,6 @@ func (ctx *Context) DecodeXml(v interface{}) error {
 	defer ctx.Request.Body.Close()
 
 	return xml.NewDecoder(ctx.Request.Body).Decode(v)
-}
-
-func (ctx *Context) ErrorJson(v interface{}) {
-	ctx.WriteJson(map[string]string{"error": fmt.Sprint(v)})
-}
-
-func (ctx *Context) ErrorfJson(format string, a ...interface{}) {
-	ctx.WriteJson(map[string]string{"error": fmt.Sprintf(format, a...)})
-}
-
-func (ctx *Context) IdJson(v interface{}) {
-	ctx.WriteJson(map[string]interface{}{"id": v})
-}
-
-func (ctx *Context) DataJson(v interface{}) {
-	ctx.WriteJson(map[string]interface{}{"data": v})
 }
 
 // HandlerName returns the last handler's name.
