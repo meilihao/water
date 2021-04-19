@@ -6,6 +6,16 @@ import (
 
 type Params map[string]string
 
+// Param returns the value of the URL param.
+// It is a shortcut for c.Params.String(key)
+//     router.GET("/user/<id>", func(c *water.Context) {
+//         // a GET request to /user/john
+//         id := c.Param("id") // id == "john"
+//     })
+func (ctx *Context) Param(key string) string {
+	return ctx.Params.String(key)
+}
+
 // String returns value by given param name.
 // panic if param not exits
 func (p Params) String(name string) string {
