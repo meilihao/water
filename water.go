@@ -47,30 +47,30 @@ func newHandlers(handlers []interface{}) (a []Handler) {
 type BeforeHandler func(http.ResponseWriter, *http.Request) bool
 
 // --- water ---
-type water struct {
+type Engine struct {
 	rootRouter    *Router
 	routers       [8]*node
 	routersStatic [8]map[string]*node
 	routeStore    *routeStore
 	ctxPool       sync.Pool
 
-	BeforeHandlers []BeforeHandler
+	// BeforeHandlers []BeforeHandler
 }
 
-func newWater() *water {
-	w := &water{
+func newWater() *Engine {
+	e := &Engine{
 		routers:       [8]*node{},
 		routersStatic: [8]map[string]*node{},
 	}
 
-	w.ctxPool.New = func() interface{} {
+	e.ctxPool.New = func() interface{} {
 		return newContext()
 	}
 
-	return w
+	return e
 }
 
-func (w *water) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
+func (e *Engine) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	if !req.ProtoAtLeast(1, 1) || req.RequestURI == "*" || req.Method == "CONNECT" {
 		rw.WriteHeader(http.StatusNotAcceptable)
 		return
@@ -82,34 +82,34 @@ func (w *water) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	if len(w.BeforeHandlers) > 0 {
-		for _, h := range w.BeforeHandlers {
-			if h(rw, req) {
-				return
-			}
-		}
-	}
+	// if len(e.BeforeHandlers) > 0 {
+	// 	for _, h := range e.BeforeHandlers {
+	// 		if h(rw, req) {
+	// 			return
+	// 		}
+	// 	}
+	// }
 
 	var handlerChain []Handler
 	var params Params
 	var found bool
 
 	// fast match for static routes
-	if node := w.routersStatic[index][req.URL.Path]; node != nil {
+	if node := e.routersStatic[index][req.URL.Path]; node != nil {
 		handlerChain = node.handlers
 		found = true
 	} else {
 		// curl http://localhost:8081 or http://localhost:8081/ -> req.URL.Path=="/"
-		handlerChain, params, found = w.routers[index].Match(req.URL.Path)
+		handlerChain, params, found = e.routers[index].Match(req.URL.Path)
 	}
 
 	if !found {
-		w.log(http.StatusNotFound, req)
+		e.log(http.StatusNotFound, req)
 		rw.WriteHeader(http.StatusNotFound)
 		return
 	}
 
-	ctx := w.ctxPool.Get().(*Context)
+	ctx := e.ctxPool.Get().(*Context)
 
 	ctx.reset()
 
@@ -122,38 +122,38 @@ func (w *water) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 
 	ctx.run()
 
-	w.ctxPool.Put(ctx)
+	e.ctxPool.Put(ctx)
 }
 
-func (w *water) ListenAndServe(addr string) error {
-	return http.ListenAndServe(addr, w)
+func (e *Engine) ListenAndServe(addr string) error {
+	return http.ListenAndServe(addr, e)
 }
 
-func (w *water) ListenAndServeTLS(addr, certFile, keyFile string) error {
-	return http.ListenAndServeTLS(addr, certFile, keyFile, w)
+func (e *Engine) ListenAndServeTLS(addr, certFile, keyFile string) error {
+	return http.ListenAndServeTLS(addr, certFile, keyFile, e)
 }
 
-func (w *water) buildTree() {
+func (e *Engine) buildTree() {
 	var endNode *node
 
-	for _, v := range w.routeStore.routeSlice {
+	for _, v := range e.routeStore.routeSlice {
 		if !(v.uri == "/" || checkSplitPattern(v.uri)) {
 			panic(fmt.Sprintf("invalid route : [%s : %s]", v.method, v.uri))
 		}
 
-		if t := w.routers[MethodIndex(v.method)]; t != nil {
+		if t := e.routers[MethodIndex(v.method)]; t != nil {
 			endNode = t.add(v.uri, v.handlers)
 		} else {
 			t := newTree()
 			endNode = t.add(v.uri, v.handlers)
-			w.routers[MethodIndex(v.method)] = t
+			e.routers[MethodIndex(v.method)] = t
 		}
 
 		if isStaticRoute(endNode) {
-			if w.routersStatic[MethodIndex(v.method)] == nil {
-				w.routersStatic[MethodIndex(v.method)] = map[string]*node{}
+			if e.routersStatic[MethodIndex(v.method)] == nil {
+				e.routersStatic[MethodIndex(v.method)] = map[string]*node{}
 			}
-			w.routersStatic[MethodIndex(v.method)][v.uri] = endNode
+			e.routersStatic[MethodIndex(v.method)][v.uri] = endNode
 		}
 	}
 }
@@ -172,7 +172,7 @@ func isStaticRoute(node *node) bool {
 
 // handle log before invoke Logger()
 // 处理调用Logger()前的日志
-func (w *water) log(status int, req *http.Request) {
+func (e *Engine) log(status int, req *http.Request) {
 	if LogClose {
 		return
 	}

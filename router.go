@@ -236,7 +236,7 @@ func getRoute(r *Router) *route {
 
 // to generate router tree.
 // r is root router.
-func (r *Router) Handler() *water {
+func (r *Router) Handler() *Engine {
 	if r.parent != nil {
 		panic("sub router not allowed: Handler()")
 	}

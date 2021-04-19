@@ -43,19 +43,19 @@ func printRawRouter(nodes []*Router, prefix string) {
 	}
 }
 
-func (w *water) PrintRawRouter() {
-	if w.rootRouter == nil {
+func (e *Engine) PrintRawRouter() {
+	if e.rootRouter == nil {
 		panic("print router: no raw router.")
 	}
 
-	printRawRouter(w.rootRouter.sub, "")
+	printRawRouter(e.rootRouter.sub, "")
 }
 
 // print routes by method
 // order by uri
-func (w *water) PrintRawRoutes(method string) {
+func (e *Engine) PrintRawRoutes(method string) {
 	method, _ = checkMethod(method)
-	routes := w.routeStore.routeMap[method]
+	routes := e.routeStore.routeMap[method]
 	if len(routes) == 0 {
 		fmt.Printf("%s\n", "no route")
 		return
@@ -77,8 +77,8 @@ func (w *water) PrintRawRoutes(method string) {
 }
 
 // order by add router order
-func (w *water) PrintRawAllRoutes() {
-	for _, v := range w.routeStore.routeSlice {
+func (e *Engine) PrintRawAllRoutes() {
+	for _, v := range e.routeStore.routeSlice {
 		// count(router.handlers) + uri
 		fmt.Printf("(%7s) %s\n", v.method, v.uri)
 	}
@@ -87,9 +87,9 @@ func (w *water) PrintRawAllRoutes() {
 // print release router tree by method
 // len(tree.handlers) includes middleware
 // TODO print handler name in []handler
-func (w *water) PrintRouterTree(method string) {
+func (e *Engine) PrintRouterTree(method string) {
 	_, idx := checkMethod(method)
-	tree := w.routers[idx]
+	tree := e.routers[idx]
 	if tree == nil {
 		fmt.Printf("%s\n", "no route")
 		return
