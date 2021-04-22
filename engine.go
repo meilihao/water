@@ -55,7 +55,7 @@ type Engine struct {
 	ctxPool       sync.Pool
 
 	// BeforeHandlers []BeforeHandler
-	notfoundHandler http.Handler
+	noRouteHandler Handler
 }
 
 func newWater() *Engine {
@@ -73,8 +73,8 @@ func newWater() *Engine {
 
 // SetNoFoundHandler the handler for no match route
 // for vue spa
-func (e *Engine) SetNoFoundHandler(h http.Handler) {
-	e.notfoundHandler = h
+func (e *Engine) SetNoFoundHandler(h Handler) {
+	e.noRouteHandler = h
 }
 
 func (e *Engine) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
@@ -89,46 +89,33 @@ func (e *Engine) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	// if len(e.BeforeHandlers) > 0 {
-	// 	for _, h := range e.BeforeHandlers {
-	// 		if h(rw, req) {
-	// 			return
-	// 		}
-	// 	}
-	// }
-
-	var handlerChain []Handler
-	var params Params
-	var found bool
+	ctx := e.ctxPool.Get().(*Context)
+	ctx.reset()
 
 	// fast match for static routes
 	if node := e.routersStatic[index][req.URL.Path]; node != nil {
-		handlerChain = node.handlers
-		found = true
+		ctx.handlers = node.handlers
+		ctx.hasRoute = true
 	} else {
 		// curl http://localhost:8081 or http://localhost:8081/ -> req.URL.Path=="/"
-		handlerChain, params, found = e.routers[index].Match(req.URL.Path)
+		ctx.handlers, ctx.Params, ctx.hasRoute = e.routers[index].Match(req.URL.Path)
 	}
 
-	if !found {
-		if e.notfoundHandler != nil {
-			e.notfoundHandler.ServeHTTP(rw, req)
+	if !ctx.hasRoute {
+		if e.noRouteHandler != nil {
+			e.noRouteHandler.ServeHTTP(ctx)
 		} else {
-			rw.WriteHeader(http.StatusNotFound)
+			ctx.WriteHeader(http.StatusNotFound)
 		}
+
+		e.ctxPool.Put(ctx)
 		return
 	}
 
-	ctx := e.ctxPool.Get().(*Context)
-
-	ctx.reset()
-
 	ctx.Environ = make(Environ)
-	ctx.Params = params
 	ctx.ResponseWriter = rw.(ResponseWriter)
 	ctx.Request = req
-	ctx.handlers = handlerChain
-	ctx.handlersLength = len(handlerChain)
+	ctx.handlersLength = len(ctx.handlers)
 
 	ctx.run()
 

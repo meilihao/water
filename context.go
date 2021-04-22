@@ -24,6 +24,8 @@ type Context struct {
 
 	written bool
 	status  int
+
+	hasRoute bool
 }
 
 type ResponseWriter interface {
@@ -42,6 +44,8 @@ func (ctx *Context) reset() {
 
 	ctx.written = false
 	ctx.status = 0
+
+	ctx.hasRoute = false
 }
 
 func (ctx *Context) Next() {
