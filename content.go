@@ -279,7 +279,6 @@ func (h *DefaultNotFoundHandler) ServeHTTP(w http.ResponseWriter, r *http.Reques
 	if h.FilterPath != nil {
 		r.URL.Path = h.FilterPath(r.URL.Path)
 	}
-	fmt.Println(r.URL.Path)
 	h.FileServer.ServeHTTP(w, r)
 }
 
