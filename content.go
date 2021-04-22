@@ -138,6 +138,11 @@ func (ctx *Context) BodyBytes() ([]byte, error) {
 	return data, err
 }
 
+// File writes the specified file into the body stream.
+func (ctx *Context) File(filepath string) {
+	http.ServeFile(ctx.ResponseWriter, ctx.Request, filepath)
+}
+
 func (ctx *Context) FormFile(key string) (multipart.File, *multipart.FileHeader, error) {
 	return ctx.Request.FormFile(key)
 }
