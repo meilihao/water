@@ -138,6 +138,11 @@ func (ctx *Context) BodyBytes() ([]byte, error) {
 	return data, err
 }
 
+// File writes the specified file into the body stream.
+func (ctx *Context) File(filepath string) {
+	http.ServeFile(ctx.ResponseWriter, ctx.Request, filepath)
+}
+
 func (ctx *Context) FormFile(key string) (multipart.File, *multipart.FileHeader, error) {
 	return ctx.Request.FormFile(key)
 }
@@ -258,20 +263,36 @@ func (ctx *Context) HandlerName() string {
 	return nameOfFunction(ctx.handlers[ctx.handlersLength-1])
 }
 
-type NotFoundHandler struct {
+// `DefaultNotFoundHandler.FilterPath=func(c){return "/index.html"}`用于spa时可能会无限重定向, 原因是http.FileServer对路径"/index.html"有特别处理
+type DefaultNotFoundHandler struct {
 	FileServer http.Handler
 	FilterPath func(string) string
 }
 
-func NewDefaultNotFoundHandler(root string) *NotFoundHandler {
-	return &NotFoundHandler{
+func NewDefaultNotFoundHandler(root string) *DefaultNotFoundHandler {
+	return &DefaultNotFoundHandler{
 		FileServer: http.FileServer(http.Dir(root)),
 	}
 }
 
-func (h *NotFoundHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (h *DefaultNotFoundHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if h.FilterPath != nil {
 		r.URL.Path = h.FilterPath(r.URL.Path)
 	}
+	fmt.Println(r.URL.Path)
 	h.FileServer.ServeHTTP(w, r)
+}
+
+type SPANotFoundHandler struct {
+	Index string
+}
+
+func NewSPANotFoundHandler(index string) *SPANotFoundHandler {
+	return &SPANotFoundHandler{
+		Index: index,
+	}
+}
+
+func (h *SPANotFoundHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	http.ServeFile(w, r, h.Index)
 }
