@@ -189,6 +189,12 @@ func (ctx *Context) Download(fpath string, inline ...bool) error {
 		dispositionType = "inline"
 	}
 
+	ctx.Header().Set("Content-Description", "File Transfer")
+	ctx.Header().Set("Content-Type", "application/octet-stream")
+	ctx.Header().Set("Content-Transfer-Encoding", "binary")
+	ctx.Header().Set("Expires", "0")
+	ctx.Header().Set("Cache-Control", "must-revalidate")
+	ctx.Header().Set("Pragma", "public")
 	ctx.Header().Set(HeaderContentDisposition, contentDisposition(fi.Name(), dispositionType))
 	http.ServeContent(ctx, ctx.Request, fi.Name(), fi.ModTime(), f)
 
