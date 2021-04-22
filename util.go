@@ -113,6 +113,11 @@ func GenerateETag(lastModified time.Time, size int64) string {
 	return fmt.Sprintf("%x-%x", lastModified.Unix(), size)
 }
 
+// GenerateETag2 generates an ETag based on file modification time, size, filename
+func GenerateETag2(lastModified time.Time, size int64, fileName string) string {
+	return fmt.Sprintf("%x-%x-%x", lastModified.Unix(), size, fileName)
+}
+
 func resolveAddress(addr []string) string {
 	switch len(addr) {
 	case 0:
