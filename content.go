@@ -138,6 +138,11 @@ func (ctx *Context) BodyBytes() ([]byte, error) {
 	return data, err
 }
 
+// ReadCloser returns a ReadCloser for request body, need Close()
+func (ctx *Context) ReadCloser() io.ReadCloser {
+	return ctx.Request.Body
+}
+
 // File writes the specified file into the body stream.
 func (ctx *Context) File(filepath string) {
 	http.ServeFile(ctx.ResponseWriter, ctx.Request, filepath)
