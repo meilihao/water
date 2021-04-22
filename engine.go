@@ -135,11 +135,27 @@ func (e *Engine) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	e.ctxPool.Put(ctx)
 }
 
+// Run start web service
+// Deprecated: please use Run()
 func (e *Engine) ListenAndServe(addr string) error {
 	return http.ListenAndServe(addr, e)
 }
 
+// Run start web service with tls
+// Deprecated: please use RunTLS()
 func (e *Engine) ListenAndServeTLS(addr, certFile, keyFile string) error {
+	return http.ListenAndServeTLS(addr, certFile, keyFile, e)
+}
+
+// Run start web service
+func (e *Engine) Run(addr ...string) error {
+	wantAddr := resolveAddress(addr)
+
+	return http.ListenAndServe(wantAddr, e)
+}
+
+// Run start web service with tls
+func (e *Engine) RunTLS(addr, certFile, keyFile string) error {
 	return http.ListenAndServeTLS(addr, certFile, keyFile, e)
 }
 

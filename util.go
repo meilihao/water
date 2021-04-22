@@ -112,3 +112,14 @@ func nameOfFunction(f interface{}) string {
 func GenerateETag(lastModified time.Time, size int64) string {
 	return fmt.Sprintf("%x-%x", lastModified.Unix(), size)
 }
+
+func resolveAddress(addr []string) string {
+	switch len(addr) {
+	case 0:
+		return ":8080"
+	case 1:
+		return addr[0]
+	default:
+		panic("too many addrs")
+	}
+}
