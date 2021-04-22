@@ -143,8 +143,8 @@ func (ctx *Context) File(filepath string) {
 	http.ServeFile(ctx.ResponseWriter, ctx.Request, filepath)
 }
 
-func (ctx *Context) FormFile(key string) (multipart.File, *multipart.FileHeader, error) {
-	return ctx.Request.FormFile(key)
+func (ctx *Context) FormFile(name string) (multipart.File, *multipart.FileHeader, error) {
+	return ctx.Request.FormFile(name)
 }
 
 func (ctx *Context) SaveToFile(fileName, savePath string) error {
