@@ -278,7 +278,7 @@ func _VariantUri(raw string) string {
 			ls[i] = "<" + strings.TrimSpace(v[1:]) + ">"
 		}
 		if strings.HasPrefix(v, "*") {
-			ls[i] = "*"
+			ls[i] = strings.TrimSpace(v)
 		}
 	}
 

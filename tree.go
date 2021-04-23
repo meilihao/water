@@ -47,9 +47,18 @@ func newNode(parent *node, pattern string) *node {
 	}
 }
 
+// getparsedPattern return parsedPattern
+// abc -> abc
+// *abc -> *abc
+// <id:Int> -> id
+// <id ~ 70|80> -> id
 func getparsedPattern(pattern string) string {
+	if strings.HasPrefix(pattern, "*") {
+		return pattern // _PATTERN_MATCH_ALL
+	}
+
 	if !strings.ContainsAny(pattern, "<>") {
-		return pattern // _PATTERN_STATIC or _PATTERN_MATCH_ALL
+		return pattern // _PATTERN_STATIC
 	}
 
 	startIdx := strings.Index(pattern, "<")   //start mark
@@ -71,6 +80,7 @@ func getparsedPattern(pattern string) string {
 	return strings.TrimSpace(pattern[startIdx+1 : closeIdx])
 }
 
+// partternRegexp return repexp, and check match count
 func partternRegexp(pattern string, want int) (string, error) {
 	if want == 0 {
 		return "", fmt.Errorf("named args need >= 1")
@@ -94,8 +104,9 @@ func analyzePattern(pattern string) (typ byte, parsedPattern string, wildcards [
 
 	parsedPattern = getparsedPattern(pattern)
 
-	if pattern == "*" {
+	if strings.HasPrefix(parsedPattern, "*") {
 		typ = _PATTERN_MATCH_ALL
+		parsedPattern = strings.TrimPrefix(parsedPattern, "*")
 	} else if strings.Contains(pattern, "<") {
 		wildcards = getWildcards(parsedPattern)
 
@@ -115,7 +126,7 @@ func analyzePattern(pattern string) (typ byte, parsedPattern string, wildcards [
 }
 
 func getWildcards(pattern string) []string {
-	ls := strings.Split(pattern, "+")
+	ls := strings.Split(pattern, ",")
 	for i := range ls {
 		ls[i] = strings.TrimSpace(ls[i])
 	}
@@ -124,7 +135,7 @@ func getWildcards(pattern string) []string {
 }
 
 // --- build tree
-
+// add same type route match order use add order
 func (n *node) add(pattern string, handlers []Handler) *node {
 	pattern = strings.TrimSuffix(pattern, "/")
 	return n.addNextSegment(pattern, handlers)
@@ -193,7 +204,6 @@ func (n *node) addSubNode(segment, pattern string, handlers []Handler) *node {
 }
 
 // --- match uri
-
 func (n *node) Match(uri string) (*node, Params) {
 	uri = strings.TrimPrefix(uri, "/")
 	uri = strings.TrimSuffix(uri, "/")
@@ -202,6 +212,7 @@ func (n *node) Match(uri string) (*node, Params) {
 	return node, params
 }
 
+// globLevel is for _PATTERN_MATCH_ALL route order: 0..n
 func (n *node) matchNextSegment(globLevel int, uri string, params Params) *node {
 	i := strings.Index(uri, "/")
 	if i == -1 {
@@ -229,11 +240,19 @@ func (n *node) matchEndNode(globLevel int, uri string, params Params) *node {
 			}
 			return n.endNodes[i]
 		case _PATTERN_HOLDER:
-			params[n.endNodes[i].wildcards[0]] = uri
+			if n.endNodes[i].parsedPattern != "_" {
+				params[n.endNodes[i].parsedPattern] = uri
+			}
 			return n.endNodes[i]
 		case _PATTERN_MATCH_ALL:
-			params["*"] = uri
-			params["*"+strconv.Itoa(globLevel)] = uri
+			if n.endNodes[i].parsedPattern != "" {
+				if n.endNodes[i].parsedPattern != "_" {
+					params[n.endNodes[i].parsedPattern] = uri
+				}
+			} else {
+				params["*"+strconv.Itoa(globLevel)] = uri
+			}
+
 			return n.endNodes[i]
 		}
 	}
@@ -263,13 +282,21 @@ func (n *node) matchSubNode(globLevel int, segment, uri string, params Params) *
 				return end
 			}
 		case _PATTERN_HOLDER:
-			if end := n.subNodes[i].matchNextSegment(globLevel+1, uri, params); end != nil {
-				params[n.subNodes[i].wildcards[0]] = segment
+			if end := n.subNodes[i].matchNextSegment(globLevel, uri, params); end != nil {
+				if n.subNodes[i].parsedPattern != "_" {
+					params[n.subNodes[i].parsedPattern] = segment
+				}
 				return end
 			}
 		case _PATTERN_MATCH_ALL:
 			if end := n.subNodes[i].matchNextSegment(globLevel+1, uri, params); end != nil {
-				params["*"+strconv.Itoa(globLevel)] = segment
+				if n.subNodes[i].parsedPattern != "" {
+					if n.subNodes[i].parsedPattern != "_" {
+						params[n.subNodes[i].parsedPattern] = segment + "/" + uri
+					}
+				} else {
+					params["*"+strconv.Itoa(globLevel)] = segment
+				}
 				return end
 			}
 		}
@@ -278,8 +305,13 @@ func (n *node) matchSubNode(globLevel int, segment, uri string, params Params) *
 	if len(n.endNodes) > 0 { //for match "/*"
 		end := n.endNodes[len(n.endNodes)-1]
 		if end.typ == _PATTERN_MATCH_ALL {
-			params["*"] = segment + "/" + uri
-			params["*"+strconv.Itoa(globLevel)] = segment + "/" + uri
+			if end.parsedPattern != "" {
+				if end.parsedPattern != "_" {
+					params[end.parsedPattern] = segment + "/" + uri
+				}
+			} else {
+				params["*"+strconv.Itoa(globLevel)] = segment + "/" + uri
+			}
 			return end
 		}
 	}

@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func TestMain(t *testing.T) {
+func TestEngine(t *testing.T) {
 	router := NewRouter()
 
 	router.Use(middleware)
@@ -29,7 +29,15 @@ func TestMain(t *testing.T) {
 		})
 	})
 	router.GET("/d2/<id ~ z(d*)b>", test3)
-	router.GET("/d2/<id1+id2 ~ z(d*)h(u)b>", test3)
+	router.GET("/d2/<id1,id2 ~ z(d*)h(u)b>", test3)
+	router.Group("/c", func(r *Router) {
+		r.PUT("/<_ ~ 70|80>", test2) // ignore holder
+		r.GET("/<_>", test2)
+		r.GET("/*file", test) // named match all
+	})
+	router.Group("/d", func(r *Router) {
+		r.GET("/*_", test) // ignore match all
+	})
 
 	w := router.Handler()
 

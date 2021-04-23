@@ -50,7 +50,7 @@ func (r *Router) Static(opt *StaticOptions) {
 	}
 
 	h := func(ctx *Context) {
-		f, err := opt.FileSystem.Open(ctx.Param("*"))
+		f, err := opt.FileSystem.Open(ctx.Param("*0"))
 		if err != nil {
 			ctx.WriteHeader(http.StatusNotFound)
 
@@ -82,7 +82,7 @@ func (r *Router) Static(opt *StaticOptions) {
 				return
 			}
 
-			ctx.File(filepath.Join(ctx.Param("*"), opt.IndexFile))
+			ctx.File(filepath.Join(ctx.Param("*0"), opt.IndexFile))
 			return
 		}
 
@@ -102,7 +102,7 @@ func (r *Router) Static(opt *StaticOptions) {
 			}
 		}
 
-		http.ServeContent(ctx.ResponseWriter, ctx.Request, ctx.Param("*"), fi.ModTime(), f)
+		http.ServeContent(ctx.ResponseWriter, ctx.Request, ctx.Param("*0"), fi.ModTime(), f)
 	}
 
 	r.GET(filepath.Join(opt.Prefix, "/*"), h)
