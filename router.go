@@ -292,3 +292,11 @@ func (r *Router) Classic() {
 	r.Use(Logger())
 	r.Use(Recovery())
 }
+
+// Default returns an router instance with the Logger and Recovery middleware already attached.
+func Default() *Router {
+	r := NewRouter()
+	r.Classic()
+
+	return r
+}
