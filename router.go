@@ -274,10 +274,10 @@ func _VariantUri(raw string) string {
 	ls := strings.Split(raw, "/")
 
 	for i, v := range ls {
-		if index := strings.Index(v, ":"); index != -1 {
-			ls[i] = "<" + strings.TrimSpace(v[index+1:]) + ">"
+		if strings.HasPrefix(v, ":") {
+			ls[i] = "<" + strings.TrimSpace(v[1:]) + ">"
 		}
-		if index := strings.Index(v, "*"); index != -1 {
+		if strings.HasPrefix(v, "*") {
 			ls[i] = "*"
 		}
 	}
