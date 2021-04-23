@@ -30,7 +30,10 @@ type StaticOptions struct {
 	FileSystem http.FileSystem
 }
 
-func (r *Router) Static(opt *StaticOptions) {
+// Static serves files from the given file system root.
+// http.NotFound is used instead of the Router's NotFound handler.
+// can send expires, etag, index
+func (r *Router) StaticAdvance(opt *StaticOptions) {
 	if r.parent != nil {
 		panic("sub router not allowed : Static()")
 	}
@@ -109,7 +112,22 @@ func (r *Router) Static(opt *StaticOptions) {
 	r.HEAD(filepath.Join(opt.Prefix, "/*"), h)
 }
 
-func (r *Router) StaticFile(uri, filepath string) {
+// Static serves files from the given file system root.
+// http.NotFound is used instead of the Router's NotFound handler.
+// use :
+//     router.Static("/static", "/var/www")
+func (r *Router) Static(uri, root string) {
+	opt := &StaticOptions{
+		Prefix:     uri,
+		FileSystem: http.Dir(root),
+	}
+
+	r.StaticAdvance(opt)
+}
+
+// StaticFile registers a single route in order to serve a single file
+// router.StaticFile("favicon.ico", "./resources/favicon.ico")
+func (r *Router) StaticFile(relativePath, filepath string) {
 	if r.parent != nil {
 		panic("sub router not allowed : Static()")
 	}
@@ -118,6 +136,6 @@ func (r *Router) StaticFile(uri, filepath string) {
 		c.File(filepath)
 	}
 
-	r.GET(uri, handler)
-	r.HEAD(uri, handler)
+	r.GET(relativePath, handler)
+	r.HEAD(relativePath, handler)
 }

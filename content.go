@@ -303,36 +303,3 @@ func (ctx *Context) FullPath() string {
 
 	return ""
 }
-
-// `DefaultNotFoundHandler.FilterPath=func(c){return "/index.html"}`用于spa时可能会无限重定向, 原因是http.FileServer对路径"/index.html"有特别处理
-type DefaultNotFoundHandler struct {
-	FileServer http.Handler
-	FilterPath func(string) string
-}
-
-func NewDefaultNotFoundHandler(root string) *DefaultNotFoundHandler {
-	return &DefaultNotFoundHandler{
-		FileServer: http.FileServer(http.Dir(root)),
-	}
-}
-
-func (h *DefaultNotFoundHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if h.FilterPath != nil {
-		r.URL.Path = h.FilterPath(r.URL.Path)
-	}
-	h.FileServer.ServeHTTP(w, r)
-}
-
-type SPANotFoundHandler struct {
-	Index string
-}
-
-func NewSPANotFoundHandler(index string) *SPANotFoundHandler {
-	return &SPANotFoundHandler{
-		Index: index,
-	}
-}
-
-func (h *SPANotFoundHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	http.ServeFile(w, r, h.Index)
-}

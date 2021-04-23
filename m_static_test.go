@@ -14,7 +14,7 @@ var currentRoot, _ = os.Getwd()
 func TestStatic(t *testing.T) {
 	Convey("Serve static files deepth=1", t, func() {
 		r := NewRouter()
-		r.Static(&StaticOptions{
+		r.StaticAdvance(&StaticOptions{
 			Prefix:     "/f",
 			FileSystem: http.Dir(currentRoot),
 			Expires:    func() string { return "46" },
@@ -30,7 +30,7 @@ func TestStatic(t *testing.T) {
 
 	Convey("Serve static files deepth=2", t, func() {
 		r := NewRouter()
-		r.Static(&StaticOptions{
+		r.StaticAdvance(&StaticOptions{
 			Prefix:     "/f",
 			FileSystem: http.Dir(currentRoot),
 			Expires:    func() string { return "46" },
