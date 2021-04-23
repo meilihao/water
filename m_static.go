@@ -108,3 +108,16 @@ func (r *Router) Static(opt *StaticOptions) {
 	r.GET(filepath.Join(opt.Prefix, "/*"), h)
 	r.HEAD(filepath.Join(opt.Prefix, "/*"), h)
 }
+
+func (r *Router) StaticFile(uri, filepath string) {
+	if r.parent != nil {
+		panic("sub router not allowed : Static()")
+	}
+
+	handler := func(c *Context) {
+		c.File(filepath)
+	}
+
+	r.GET(uri, handler)
+	r.HEAD(uri, handler)
+}
