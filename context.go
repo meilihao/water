@@ -26,6 +26,8 @@ type Context struct {
 	status  int
 
 	endNode *node // matched route node
+
+	parsedParams bool
 }
 
 type ResponseWriter interface {
