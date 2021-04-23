@@ -172,6 +172,7 @@ func (e *Engine) buildTree() {
 	}
 }
 
+// 向上递归检查是否为static route
 func isStaticRoute(node *node) bool {
 	if node == nil {
 		return true
