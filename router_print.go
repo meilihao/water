@@ -17,8 +17,17 @@ func printRawRoute(prefix string, node *Router) {
 	if node.method == "" {
 		fmt.Printf("%s %s\n", prefix, node.pattern)
 	} else {
-		fmt.Printf("%s %s [%-7s : %d]\n", prefix, node.pattern, node.method, len(node.handlers))
+		fmt.Printf("%s %s [%-7s : %d]\n", prefix, node.pattern, node.method, countHandlersForRawRouter(node))
 	}
+}
+
+// 在e.rootRouter上递归统计len(handlers)
+func countHandlersForRawRouter(r *Router) int {
+	if r.parent != nil {
+		return len(r.befores) + len(r.handlers) + countHandlersForRawRouter(r.parent)
+	}
+
+	return len(r.befores) + len(r.handlers)
 }
 
 func printRawRouter(nodes []*Router, prefix string) {
@@ -80,7 +89,7 @@ func (e *Engine) PrintRawRoutes(method string) {
 func (e *Engine) PrintRawAllRoutes() {
 	for _, v := range e.routeStore.routeSlice {
 		// count(router.handlers) + uri
-		fmt.Printf("(%7s) %s\n", v.method, v.uri)
+		fmt.Printf("(%7s) %s : %d\n", v.method, v.uri, len(v.handlers))
 	}
 }
 

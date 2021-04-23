@@ -2,6 +2,7 @@ package water
 
 import (
 	"fmt"
+	"net/http"
 	"testing"
 )
 
@@ -45,13 +46,13 @@ func TestEngine(t *testing.T) {
 	w.PrintRawRouter()
 
 	fmt.Println("\n\n", "GET's Routes:")
-	w.PrintRawRoutes("GET")
+	w.PrintRawRoutes(http.MethodGet)
 
 	fmt.Println("\n\n", "All Routes:")
 	w.PrintRawAllRoutes()
 
 	fmt.Println("\n\n", "GET's Release Router Tree:")
-	w.PrintRouterTree("GET")
+	w.PrintRouterTree(http.MethodGet)
 
 	// if err := w.ListenAndServe(":8081"); err != nil {
 	// 	log.Fatalln(err)

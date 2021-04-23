@@ -110,7 +110,7 @@ func NewRouter() *Router {
 	return &Router{}
 }
 
-func (r *Router) Group(pattern string, fn func(*Router)) {
+func (r *Router) Group(pattern string, is ...interface{}) *Router {
 	rr := &Router{
 		pattern: pattern,
 		parent:  r,
@@ -118,7 +118,18 @@ func (r *Router) Group(pattern string, fn func(*Router)) {
 
 	r.sub = append(r.sub, rr)
 
-	fn(rr)
+	for i := range is {
+		switch v := is[i].(type) {
+		case func(*Context):
+			r.befores = append(r.befores, v)
+		case func(*Router):
+			v(rr)
+		default:
+			panic("unsupported type")
+		}
+	}
+
+	return rr
 }
 
 func (r *Router) Use(handlers ...interface{}) {
