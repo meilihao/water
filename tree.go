@@ -26,6 +26,8 @@ type node struct {
 	reg           *regexp.Regexp
 
 	handlers []Handler
+
+	matchNode *route // only for leaf node
 }
 
 func newTree() *node {
@@ -192,15 +194,15 @@ func (n *node) addSubNode(segment, pattern string, handlers []Handler) *node {
 
 // --- match uri
 
-func (n *node) Match(uri string) ([]Handler, Params, bool) {
+func (n *node) Match(uri string) (*node, Params) {
 	uri = strings.TrimPrefix(uri, "/")
 	uri = strings.TrimSuffix(uri, "/")
 	params := make(Params)
-	handle, ok := n.matchNextSegment(0, uri, params)
-	return handle, params, ok
+	node := n.matchNextSegment(0, uri, params)
+	return node, params
 }
 
-func (n *node) matchNextSegment(globLevel int, uri string, params Params) ([]Handler, bool) {
+func (n *node) matchNextSegment(globLevel int, uri string, params Params) *node {
 	i := strings.Index(uri, "/")
 	if i == -1 {
 		return n.matchEndNode(globLevel, uri, params)
@@ -208,12 +210,12 @@ func (n *node) matchNextSegment(globLevel int, uri string, params Params) ([]Han
 	return n.matchSubNode(globLevel, uri[:i], uri[i+1:], params)
 }
 
-func (n *node) matchEndNode(globLevel int, uri string, params Params) ([]Handler, bool) {
+func (n *node) matchEndNode(globLevel int, uri string, params Params) *node {
 	for i := 0; i < len(n.endNodes); i++ {
 		switch n.endNodes[i].typ {
 		case _PATTERN_STATIC:
 			if n.endNodes[i].pattern == uri {
-				return n.endNodes[i].handlers, true
+				return n.endNodes[i]
 			}
 		case _PATTERN_REGEXP:
 			results := n.endNodes[i].reg.FindStringSubmatch(uri)
@@ -225,26 +227,27 @@ func (n *node) matchEndNode(globLevel int, uri string, params Params) ([]Handler
 			for j := 0; j < len(n.endNodes[i].wildcards); j++ {
 				params[n.endNodes[i].wildcards[j]] = results[j+1]
 			}
-			return n.endNodes[i].handlers, true
+			return n.endNodes[i]
 		case _PATTERN_HOLDER:
 			params[n.endNodes[i].wildcards[0]] = uri
-			return n.endNodes[i].handlers, true
+			return n.endNodes[i]
 		case _PATTERN_MATCH_ALL:
 			params["*"] = uri
 			params["*"+strconv.Itoa(globLevel)] = uri
-			return n.endNodes[i].handlers, true
+			return n.endNodes[i]
 		}
 	}
-	return nil, false
+
+	return nil
 }
 
-func (n *node) matchSubNode(globLevel int, segment, uri string, params Params) ([]Handler, bool) {
+func (n *node) matchSubNode(globLevel int, segment, uri string, params Params) *node {
 	for i := 0; i < len(n.subNodes); i++ {
 		switch n.subNodes[i].typ {
 		case _PATTERN_STATIC:
 			if n.subNodes[i].pattern == segment {
-				if handlers, ok := n.subNodes[i].matchNextSegment(globLevel, uri, params); ok {
-					return handlers, true
+				if end := n.subNodes[i].matchNextSegment(globLevel, uri, params); end != nil {
+					return end
 				}
 			}
 		case _PATTERN_REGEXP:
@@ -256,18 +259,18 @@ func (n *node) matchSubNode(globLevel int, segment, uri string, params Params) (
 			for j := 0; j < len(n.subNodes[i].wildcards); j++ {
 				params[n.subNodes[i].wildcards[j]] = results[j+1]
 			}
-			if handle, ok := n.subNodes[i].matchNextSegment(globLevel, uri, params); ok {
-				return handle, true
+			if end := n.subNodes[i].matchNextSegment(globLevel, uri, params); end != nil {
+				return end
 			}
 		case _PATTERN_HOLDER:
-			if handlers, ok := n.subNodes[i].matchNextSegment(globLevel+1, uri, params); ok {
+			if end := n.subNodes[i].matchNextSegment(globLevel+1, uri, params); end != nil {
 				params[n.subNodes[i].wildcards[0]] = segment
-				return handlers, true
+				return end
 			}
 		case _PATTERN_MATCH_ALL:
-			if handlers, ok := n.subNodes[i].matchNextSegment(globLevel+1, uri, params); ok {
+			if end := n.subNodes[i].matchNextSegment(globLevel+1, uri, params); end != nil {
 				params["*"+strconv.Itoa(globLevel)] = segment
-				return handlers, true
+				return end
 			}
 		}
 	}
@@ -277,9 +280,9 @@ func (n *node) matchSubNode(globLevel int, segment, uri string, params Params) (
 		if end.typ == _PATTERN_MATCH_ALL {
 			params["*"] = segment + "/" + uri
 			params["*"+strconv.Itoa(globLevel)] = segment + "/" + uri
-			return end.handlers, true
+			return end
 		}
 	}
 
-	return nil, false
+	return nil
 }

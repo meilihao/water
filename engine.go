@@ -1,7 +1,6 @@
 package water
 
 import (
-	"fmt"
 	"net/http"
 	"sync"
 	"time"
@@ -93,15 +92,13 @@ func (e *Engine) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	ctx.reset()
 
 	// fast match for static routes
-	if node := e.routersStatic[index][req.URL.Path]; node != nil {
-		ctx.handlers = node.handlers
-		ctx.hasRoute = true
+	if ctx.endNode = e.routersStatic[index][req.URL.Path]; ctx.endNode != nil {
 	} else {
 		// curl http://localhost:8081 or http://localhost:8081/ -> req.URL.Path=="/"
-		ctx.handlers, ctx.Params, ctx.hasRoute = e.routers[index].Match(req.URL.Path)
+		ctx.endNode, ctx.Params = e.routers[index].Match(req.URL.Path)
 	}
 
-	if !ctx.hasRoute {
+	if ctx.endNode == nil {
 		if e.noRouteHandler != nil {
 			e.noRouteHandler.ServeHTTP(ctx)
 		} else {
@@ -113,8 +110,11 @@ func (e *Engine) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	ctx.Environ = make(Environ)
+
 	ctx.ResponseWriter = rw.(ResponseWriter)
 	ctx.Request = req
+
+	ctx.handlers = ctx.endNode.handlers
 	ctx.handlersLength = len(ctx.handlers)
 
 	ctx.run()
@@ -151,15 +151,11 @@ func (e *Engine) buildTree() {
 	var endNode *node
 
 	for _, v := range e.routeStore.routeSlice {
-		if !(v.uri == "/" || checkSplitPattern(v.uri)) {
-			panic(fmt.Sprintf("invalid route : [%s : %s]", v.method, v.uri))
-		}
-
 		if t := e.routers[MethodIndex(v.method)]; t != nil {
-			endNode = t.add(v.uri, v.handlers)
+			endNode = t.add(v.variantUri, v.handlers)
 		} else {
 			t := newTree()
-			endNode = t.add(v.uri, v.handlers)
+			endNode = t.add(v.variantUri, v.handlers)
 			e.routers[MethodIndex(v.method)] = t
 		}
 
@@ -167,8 +163,10 @@ func (e *Engine) buildTree() {
 			if e.routersStatic[MethodIndex(v.method)] == nil {
 				e.routersStatic[MethodIndex(v.method)] = map[string]*node{}
 			}
-			e.routersStatic[MethodIndex(v.method)][v.uri] = endNode
+			e.routersStatic[MethodIndex(v.method)][v.variantUri] = endNode
 		}
+
+		endNode.matchNode = v
 	}
 }
 

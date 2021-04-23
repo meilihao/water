@@ -274,6 +274,15 @@ func (ctx *Context) HandlerName() string {
 	return nameOfFunction(ctx.handlers[ctx.handlersLength-1])
 }
 
+// FullPath returns a matched route full path. For not found routes returns an empty string
+func (ctx *Context) FullPath() string {
+	if ctx.endNode != nil {
+		return ctx.endNode.matchNode.uri
+	}
+
+	return ""
+}
+
 // `DefaultNotFoundHandler.FilterPath=func(c){return "/index.html"}`用于spa时可能会无限重定向, 原因是http.FileServer对路径"/index.html"有特别处理
 type DefaultNotFoundHandler struct {
 	FileServer http.Handler

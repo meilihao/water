@@ -52,8 +52,10 @@ func MethodIndex(method string) int {
 // --- route ---
 
 type route struct {
-	method, uri string
-	handlers    []Handler
+	method     string
+	uri        string // raw uri
+	variantUri string // variant uri, httprouter route compatible
+	handlers   []Handler
 }
 
 // routeStore represents a thread-safe store for route uri.
@@ -184,6 +186,7 @@ func (r *Router) HEAD(pattern string, handlers ...interface{}) {
 	r.handle(http.MethodHead, pattern, handlers)
 }
 
+// add all route to routeStore
 func dumpRoute(r *Router, rs *routeStore) {
 	if r.sub == nil {
 		rs.add(getRoute(r))
@@ -245,12 +248,41 @@ func (r *Router) Handler() *Engine {
 
 	dumpRoute(r, rs)
 
+	// check uri
+	for _, v := range rs.routeSlice {
+		if !(v.uri == "/" || checkSplitPattern(v.uri)) {
+			panic(fmt.Sprintf("invalid route : [%s : %s]", v.method, v.uri))
+		}
+
+		v.variantUri = _VariantUri(v.uri)
+		fmt.Println(v.variantUri)
+	}
+
 	w := newWater()
 	w.rootRouter = r
 	w.routeStore = rs
 	w.buildTree()
 
 	return w
+}
+
+func _VariantUri(raw string) string {
+	if !strings.Contains(raw, "/:") && !strings.Contains(raw, "/*") {
+		return raw
+	}
+
+	ls := strings.Split(raw, "/")
+
+	for i, v := range ls {
+		if index := strings.Index(v, ":"); index != -1 {
+			ls[i] = "<" + strings.TrimSpace(v[index+1:]) + ">"
+		}
+		if index := strings.Index(v, "*"); index != -1 {
+			ls[i] = "*"
+		}
+	}
+
+	return strings.Join(ls, "/")
 }
 
 func (r *Router) Classic() {
