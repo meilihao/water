@@ -33,6 +33,9 @@ func (ctx *Context) Query(name string) string {
 	if err := ctx.parseFormOrMultipartForm(); err != nil {
 		panic(err.Error())
 	}
+	if ctx.Request.Form.Get(name) == "" {
+		return ""
+	}
 	return template.HTMLEscapeString(strings.TrimSpace(ctx.Request.Form.Get(name)))
 }
 
