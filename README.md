@@ -2,6 +2,8 @@
 
 water is a micro & pluggable web framework for Go.
 
+**water is Compatible with gin route style.**
+
 > Routing Policy is from [Macaron](github.com/go-macaron/macaron). Thanks [Unknwon](https://github.com/Unknwon).
 
 ## Getting Started
@@ -14,12 +16,11 @@ To install water:
 
 The very basic usage of water:
 
-example see [main_test.go](/main_test.go)
+example see [engine_test.go](/engine_test.go)
 
 output(router tree):
 ```sh
  Raw Router Tree:
-Routers:
 ├── / [GET     : 1]
 ├── /help [GET     : 1]
 ├── /about [GET     : 1]
@@ -42,7 +43,13 @@ Routers:
 │       ├── /<id ~ 70|80> [PUT     : 1]
 │       └── /* [GET     : 1]
 ├── /d2/<id ~ z(d*)b> [GET     : 1]
-└── /d2/<id1+id2 ~ z(d*)h(u)b> [GET     : 1]
+├── /d2/<id1,id2 ~ z(d*)h(u)b> [GET     : 1]
+├── /c
+│   ├── /<_ ~ 70|80> [PUT     : 1]
+│   ├── /<_> [GET     : 1]
+│   └── /*file [GET     : 1]
+└── /d
+    └── /*_ [GET     : 1]
 
 
  GET's Routes:
@@ -53,8 +60,11 @@ Routers:
 ( 3) /a/b/*
 ( 3) /a/b/2
 ( 2) /about
+( 2) /c/*file
+( 2) /c/<_>
+( 2) /d/*_
 ( 2) /d2/<id ~ z(d*)b>
-( 2) /d2/<id1+id2 ~ z(d*)h(u)b>
+( 2) /d2/<id1,id2 ~ z(d*)h(u)b>
 ( 2) /help
 
 
@@ -79,11 +89,15 @@ Routers:
 (    PUT) /a/b/<id ~ 70|80>
 (    GET) /a/b/*
 (    GET) /d2/<id ~ z(d*)b>
-(    GET) /d2/<id1+id2 ~ z(d*)h(u)b>
+(    GET) /d2/<id1,id2 ~ z(d*)h(u)b>
+(    PUT) /c/<_ ~ 70|80>
+(    GET) /c/<_>
+(    GET) /c/*file
+(    GET) /d/*_
 
 
  GET's Release Router Tree:
-/ [2]
+/ [0]
 ├── a
 │   ├── b
 │   │   ├── 2 [3]
@@ -93,7 +107,13 @@ Routers:
 │   └── <id:int> [3]
 ├── d2
 │   ├── <id ~ z(d*)b> [2]
-│   └── <id1+id2 ~ z(d*)h(u)b> [2]
+│   └── <id1,id2 ~ z(d*)h(u)b> [2]
+├── c
+│   ├── <_> [2]
+│   └── *file [2]
+├── d
+│   └── *_ [2]
+├──  [2]
 ├── help [2]
 └── about [2]
 ```

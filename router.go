@@ -255,7 +255,6 @@ func (r *Router) Handler() *Engine {
 		}
 
 		v.variantUri = _VariantUri(v.uri)
-		fmt.Println(v.variantUri)
 	}
 
 	w := newWater()
