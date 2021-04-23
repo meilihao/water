@@ -109,6 +109,9 @@ func (ctx *Context) QueryArray(name string) []string {
 }
 
 // QueryMap returns a map for a given query key.
+// POST /post?ids[a]=1234&ids[b]=hello HTTP/1.1
+// Content-Type: application/x-www-form-urlencoded
+// names[first]=thinkerou&names[second]=tianou
 func (ctx *Context) QueryMap(key string) map[string]string {
 	ctx.parseFormOrMultipartForm()
 

@@ -152,20 +152,41 @@ func (ctx *Context) FormFile(name string) (multipart.File, *multipart.FileHeader
 	return ctx.Request.FormFile(name)
 }
 
-func (ctx *Context) SaveToFile(fileName, savePath string) error {
-	file, _, err := ctx.Request.FormFile(fileName)
+// SaveUploadedFile uploads the form file to specific dst.
+// --- single file
+// file, _ := c.FormFile("file")
+// c.SaveUploadedFile(file, dst)
+//
+// curl -X POST http://localhost:8080/upload \
+//   -F "file=@/Users/appleboy/test.zip" \
+//   -H "Content-Type: multipart/form-data"
+// --- Multiple files use:
+// files := ctx.Request.MultipartForm.File["upload[]"]
+// for _, file := range files {
+// 	log.Println(file.Filename)
+
+// 	// Upload the file to specific dst.
+// 	c.SaveUploadedFile(file, dst)
+// }
+//
+// curl -X POST http://localhost:8080/upload \
+//   -F "upload[]=@/Users/appleboy/test1.zip" \
+//   -F "upload[]=@/Users/appleboy/test2.zip" \
+//   -H "Content-Type: multipart/form-data"
+func (ctx *Context) SaveUploadedFile(file *multipart.FileHeader, dst string) error {
+	src, err := file.Open()
 	if err != nil {
 		return err
 	}
-	defer file.Close()
+	defer src.Close()
 
-	f, err := os.OpenFile(savePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
+	f, err := os.OpenFile(dst, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
 	if err != nil {
 		return err
 	}
 	defer f.Close()
 
-	_, err = io.Copy(f, file)
+	_, err = io.Copy(f, src)
 	return err
 }
 
