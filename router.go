@@ -50,11 +50,6 @@ func MethodIndex(method string) int {
 }
 
 // --- route ---
-// tree:
-// - ""    // /
-// - about // /about
-// - api
-//   - xxx // /api/xxx
 
 type route struct {
 	method     string

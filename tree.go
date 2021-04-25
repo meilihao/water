@@ -30,6 +30,11 @@ type node struct {
 	matchNode *route // only for leaf node
 }
 
+// tree:
+// - ""    // /
+// - about // /about
+// - api
+//   - xxx // /api/xxx
 func newTree() *node {
 	return newNode(nil, "")
 }
