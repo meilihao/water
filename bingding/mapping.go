@@ -209,6 +209,7 @@ func mapFormByTag(ptr interface{}, form map[string][]string, tag string) error {
 	return err
 }
 
+// ptr need make() done
 func setFormMap(ptr interface{}, form map[string][]string) error {
 	el := reflect.TypeOf(ptr).Elem()
 
@@ -230,6 +231,38 @@ func setFormMap(ptr interface{}, form map[string][]string) error {
 	}
 	for k, v := range form {
 		ptrMap[k] = v[len(v)-1] // pick last
+	}
+
+	return nil
+}
+
+func setFormMap2(obj interface{}, el reflect.Type, form map[string][]string) error {
+	el = el.Elem()
+
+	if el.Kind() == reflect.Slice {
+		m, ok := obj.(*map[string][]string)
+		if !ok {
+			return errors.New("cannot convert to map slices of strings")
+		}
+		if *m == nil {
+			*m = make(map[string][]string, len(form))
+		}
+		for k, v := range form {
+			(*m)[k] = v
+		}
+
+		return nil
+	}
+
+	m, ok := obj.(*map[string]string)
+	if !ok {
+		return errors.New("cannot convert to map of strings")
+	}
+	if *m == nil {
+		*m = make(map[string]string, len(form))
+	}
+	for k, v := range form {
+		(*m)[k] = v[len(v)-1] // pick last
 	}
 
 	return nil

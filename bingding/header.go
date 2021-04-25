@@ -17,6 +17,13 @@ func (headerBinding) Bind(req *http.Request, obj interface{}) error {
 	if err != nil {
 		return err
 	}
+	return validate(obj)
+}
+
+func (headerBinding) Bind2(req *http.Request, obj interface{}) error {
+	if err := MapForm(obj, req.Header, nil, "header"); err != nil {
+		return err
+	}
 
 	return validate(obj)
 }

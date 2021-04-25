@@ -30,6 +30,20 @@ func (formBinding) Bind(req *http.Request, obj interface{}) error {
 	return validate(obj)
 }
 
+func (formBinding) Bind2(req *http.Request, obj interface{}) error {
+	if req.Form == nil {
+		if err := req.ParseForm(); err != nil {
+			return err
+		}
+	}
+
+	if err := MapForm(obj, req.Form, nil, "form"); err != nil {
+		return err
+	}
+
+	return validate(obj)
+}
+
 type formMultipartBinding struct{}
 
 func (formMultipartBinding) Name() string {
@@ -44,6 +58,20 @@ func (b formMultipartBinding) Bind(req *http.Request, obj interface{}) error {
 	}
 
 	if _, err := mapping(reflect.ValueOf(obj), emptyField, (*multipartForm)(req.MultipartForm), "form"); err != nil {
+		return err
+	}
+
+	return validate(obj)
+}
+
+func (b formMultipartBinding) Bind2(req *http.Request, obj interface{}) error {
+	if req.MultipartForm == nil {
+		if err := req.ParseMultipartForm(defaultMemory); err != nil {
+			return err
+		}
+	}
+
+	if err := MapForm(obj, req.MultipartForm.Value, req.Response.Request.MultipartForm.File, "form"); err != nil {
 		return err
 	}
 
