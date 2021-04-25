@@ -14,18 +14,16 @@ func MapForm(obj interface{}, form map[string][]string,
 	}
 
 	formStruct := reflect.ValueOf(obj)
-	var bakPtr interface{}
 
 	if formStruct.Kind() != reflect.Ptr {
 		return fmt.Errorf("need ptr obj")
 	}
 
-	bakPtr = formStruct.Interface()
 	formStruct = formStruct.Elem()
 
 	if formStruct.Kind() == reflect.Map &&
 		formStruct.Type().Key().Kind() == reflect.String { // formStruct is map[string]xxx
-		return setFormMap2(bakPtr, formStruct.Type(), form)
+		return setFormMap2(obj, formStruct.Type(), form)
 	}
 
 	return nil
