@@ -8,12 +8,10 @@ import (
 	"bytes"
 	ojson "encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"mime/multipart"
 	"net/http"
-	"net/http/httputil"
 	"os"
 	"reflect"
 	"strconv"
@@ -582,18 +580,20 @@ func TestBindingFormPost(t *testing.T) {
 	var obj FooBarStruct
 	assert.NoError(t, Form.Bind(req, &obj))
 
-	assert.Equal(t, "form-urlencoded", Form.Name())
+	assert.Equal(t, "form", Form.Name())
 	assert.Equal(t, "bar", obj.Foo)
 	assert.Equal(t, "foo", obj.Bar)
 }
 
+// gin use r.PostForm, so bar is ""
+// water use r.Form, so bar is "getbar"
 func TestBindingDefaultValueFormPost(t *testing.T) {
 	req := createDefaultFormPostRequest(t)
 	var obj FooDefaultBarStruct
 	assert.NoError(t, Form.Bind(req, &obj))
 
 	assert.Equal(t, "bar", obj.Foo)
-	assert.Equal(t, "hello", obj.Bar)
+	assert.Equal(t, "getbar", obj.Bar)
 }
 
 func TestBindingFormPostForMap(t *testing.T) {
@@ -732,6 +732,8 @@ func TestHeaderBinding(t *testing.T) {
 	assert.Error(t, err)
 }
 
+// in setWithProperType(), jsoniter will init not.Name
+// in setWithProperType(), gin use std json will not init not.Name
 func TestUriBinding(t *testing.T) {
 	b := Uri
 	assert.Equal(t, "uri", b.Name())
@@ -750,7 +752,7 @@ func TestUriBinding(t *testing.T) {
 	}
 	var not NotSupportStruct
 	assert.Error(t, b.Bind(m, &not))
-	assert.Equal(t, map[string]interface{}(nil), not.Name)
+	assert.Equal(t, map[string]interface{}{}, not.Name)
 }
 
 func TestUriInnerBinding(t *testing.T) {
@@ -855,7 +857,7 @@ func TestFormBindingMultipartFail(t *testing.T) {
 
 func TestFormPostBindingFail(t *testing.T) {
 	b := FormPost
-	assert.Equal(t, "form-urlencoded", b.Name())
+	assert.Equal(t, "form", b.Name())
 
 	obj := FooBarStruct{}
 	req, _ := http.NewRequest("POST", "/", nil)
@@ -1064,13 +1066,9 @@ func testFormBindingForType(t *testing.T, method, path, badPath, body, badBody s
 			}{Name: "thinkerou"}),
 			*obj.StructPointerFoo)
 	case "Map":
-		dump, _ := httputil.DumpRequest(req, true)
-		fmt.Println("--------", string(dump))
 		obj := FooStructForMapType{}
 		err := b.Bind(req, &obj)
 		assert.NoError(t, err)
-		fmt.Println("--------", req.Form, req.PostForm)
-		fmt.Println("--------", obj)
 		assert.Equal(t, float64(123), obj.MapFoo["bar"].(float64))
 	case "SliceMap":
 		obj := FooStructForSliceMapType{}

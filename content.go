@@ -11,7 +11,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gin-gonic/gin/binding"
 	"github.com/meilihao/logx"
 	"github.com/meilihao/water/binding"
 )

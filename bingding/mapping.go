@@ -43,6 +43,9 @@ func tryToSetValue(value reflect.Value, field reflect.StructField, setter setter
 	if tagValue == "" { // default value is FieldName
 		tagValue = field.Name
 	}
+	if tagValue == "" { // when field is "emptyField" variable
+		return false, nil
+	}
 
 	var opt string
 	for len(opts) > 0 {
@@ -58,7 +61,7 @@ func tryToSetValue(value reflect.Value, field reflect.StructField, setter setter
 }
 
 func mapping(value reflect.Value, field reflect.StructField, setter setter, tag string) (bool, error) {
-	if field.Tag.Get(tag) == "-" || field.Tag.Get(tag) == "" { // just ignoring this field
+	if field.Tag.Get(tag) == "-" { // just ignoring this field
 		return false, nil
 	}
 
@@ -193,6 +196,7 @@ func mapFormByTag(ptr interface{}, form map[string][]string, tag string) error {
 		ptrVal = ptrVal.Elem()
 		pointed = ptrVal.Interface()
 	}
+
 	if ptrVal.Kind() == reflect.Map &&
 		ptrVal.Type().Key().Kind() == reflect.String { // map[string]xxx
 		if pointed != nil {

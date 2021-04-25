@@ -37,7 +37,7 @@ func TestDefaultValidator(t *testing.T) {
 		obj     interface{}
 		wantErr bool
 	}{
-		{"validate nil obj", NewvVlidatorV10(), nil, false},
+		{"validate nil obj", NewvVlidatorV10(), nil, true},
 		{"validate int obj", NewvVlidatorV10(), 3, false},
 		{"validate struct failed-1", NewvVlidatorV10(), exampleStruct{A: "123456789", B: 1}, true},
 		{"validate struct failed-2", NewvVlidatorV10(), exampleStruct{A: "12345678", B: 0}, true},
