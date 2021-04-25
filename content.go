@@ -11,7 +11,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gin-gonic/gin/binding"
 	"github.com/meilihao/logx"
+	"github.com/meilihao/water/binding"
 )
 
 type H map[string]interface{}
@@ -277,16 +279,23 @@ func (ctx *Context) XML(code int, v interface{}) error {
 	return err
 }
 
-func (ctx *Context) DecodeJson(v interface{}) error {
-	defer ctx.Request.Body.Close()
+// Bind use http method and ContentType to decode req
+func (ctx *Context) Bind(obj interface{}) error {
+	b := binding.NewBindinger(ctx.Request.Method, ctx.ContentType())
+	if b != binding.JSON && b != binding.XML {
+		ctx.ParseFormOrMultipartForm()
+	}
 
-	return json.NewDecoder(ctx.Request.Body).Decode(v)
+	return ctx.BindWith(obj, b)
 }
 
-func (ctx *Context) DecodeXml(v interface{}) error {
-	defer ctx.Request.Body.Close()
+// BindWith use the assigned Bindinger to decode req
+func (ctx *Context) BindWith(obj interface{}, b binding.Bindinger) error {
+	if b != binding.JSON && b != binding.XML {
+		ctx.ParseFormOrMultipartForm()
+	}
 
-	return xml.NewDecoder(ctx.Request.Body).Decode(v)
+	return b.Bind(ctx.Request, obj)
 }
 
 // HandlerName returns the last handler's name.
@@ -302,4 +311,28 @@ func (ctx *Context) FullPath() string {
 	}
 
 	return ""
+}
+
+const (
+	// MaxMultipartMemory
+	DefaultMaxMemory = 10 << 20 // 10MB
+)
+
+// ParseFormOrMultipartForm parses the raw query from the URL.
+func (ctx *Context) ParseFormOrMultipartForm() {
+	if ctx.parsedParams {
+		return
+	}
+	ctx.parsedParams = true
+
+	if (ctx.Request.Method == http.MethodPost || ctx.Request.Method == http.MethodPut || ctx.Request.Method == http.MethodPatch) &&
+		strings.Contains(ctx.Request.Header.Get("Content-Type"), "multipart/form-data") {
+		if err := ctx.Request.ParseMultipartForm(DefaultMaxMemory); err != nil {
+			panic(errors.New("parseMultipartForm error:" + err.Error()))
+		}
+	} else {
+		if err := ctx.Request.ParseForm(); err != nil {
+			panic(errors.New("parseForm error:" + err.Error()))
+		}
+	}
 }

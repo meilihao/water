@@ -1,35 +1,9 @@
 package water
 
 import (
-	"errors"
-	"net/http"
 	"strconv"
 	"strings"
 )
-
-const (
-	// MaxMultipartMemory
-	DefaultMaxMemory = 10 << 20 // 10MB
-)
-
-// parseFormOrMultipartForm parses the raw query from the URL.
-func (ctx *Context) parseFormOrMultipartForm() {
-	if ctx.parsedParams {
-		return
-	}
-	ctx.parsedParams = true
-
-	if (ctx.Request.Method == http.MethodPost || ctx.Request.Method == http.MethodPut || ctx.Request.Method == http.MethodPatch) &&
-		strings.Contains(ctx.Request.Header.Get("Content-Type"), "multipart/form-data") {
-		if err := ctx.Request.ParseMultipartForm(DefaultMaxMemory); err != nil {
-			panic(errors.New("parseMultipartForm error:" + err.Error()))
-		}
-	} else {
-		if err := ctx.Request.ParseForm(); err != nil {
-			panic(errors.New("parseForm error:" + err.Error()))
-		}
-	}
-}
 
 func (ctx *Context) queryExist(name string) bool {
 	if ctx.Request.Form == nil {
@@ -46,7 +20,7 @@ func (ctx *Context) queryExist(name string) bool {
 // Note: It is recommended! If not, you can use "ctx.Request.FormValue".
 // 这是推荐的做法,如果不认同,可使用ctx.Request.FormValue.
 func (ctx *Context) Query(name string) string {
-	ctx.parseFormOrMultipartForm()
+	ctx.ParseFormOrMultipartForm()
 
 	if !ctx.queryExist(name) {
 		return ""
@@ -93,7 +67,7 @@ func (ctx *Context) QueryFloat64(name string) float64 {
 
 // QueryArray returns a list of results by given query name
 func (ctx *Context) QueryArray(name string) []string {
-	ctx.parseFormOrMultipartForm()
+	ctx.ParseFormOrMultipartForm()
 
 	if !ctx.queryExist(name) {
 		return nil
@@ -113,7 +87,7 @@ func (ctx *Context) QueryArray(name string) []string {
 // Content-Type: application/x-www-form-urlencoded
 // names[first]=thinkerou&names[second]=tianou
 func (ctx *Context) QueryMap(key string) map[string]string {
-	ctx.parseFormOrMultipartForm()
+	ctx.ParseFormOrMultipartForm()
 
 	dicts := make(map[string]string)
 
@@ -132,7 +106,7 @@ func (ctx *Context) QueryMap(key string) map[string]string {
 // Note: It is recommended! If not, you can use "ctx.Request.FormValue".
 // 这是推荐的做法,如果不认同,可使用ctx.Request.FormValue.
 func (ctx *Context) DefaultQuery(name, defaultValue string) string {
-	ctx.parseFormOrMultipartForm()
+	ctx.ParseFormOrMultipartForm()
 
 	if !ctx.queryExist(name) {
 		return defaultValue
@@ -179,7 +153,7 @@ func (ctx *Context) DefaultQueryFloat64(name, defaultValue string) float64 {
 
 // DefaultQueryArray returns a list of results by given query name
 func (ctx *Context) DefaultQueryArray(name string, defaultValue []string) []string {
-	ctx.parseFormOrMultipartForm()
+	ctx.ParseFormOrMultipartForm()
 
 	vs, ok := ctx.Request.Form[name]
 	if !ok {
@@ -195,7 +169,7 @@ func (ctx *Context) DefaultQueryArray(name string, defaultValue []string) []stri
 
 // DefaultQueryMap returns a map for a given query key.
 func (ctx *Context) DefaultQueryMap(key string, defaultValue map[string]string) map[string]string {
-	ctx.parseFormOrMultipartForm()
+	ctx.ParseFormOrMultipartForm()
 
 	dicts := make(map[string]string)
 	exist := false
