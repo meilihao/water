@@ -52,9 +52,11 @@ func printRawRouter(nodes []*Router, prefix string) {
 	}
 }
 
+// output: uri [method : count(handler)]
 func (e *Engine) PrintRawRouter() {
 	if e.rootRouter == nil {
-		panic("print router: no raw router.")
+		fmt.Printf("%s\n", "no route")
+		return
 	}
 
 	printRawRouter(e.rootRouter.sub, "")
@@ -62,6 +64,7 @@ func (e *Engine) PrintRawRouter() {
 
 // print routes by method
 // order by uri
+// output: [count(handler)] uri
 func (e *Engine) PrintRawRoutes(method string) {
 	method, _ = checkMethod(method)
 	routes := e.routeStore.routeMap[method]
@@ -81,36 +84,46 @@ func (e *Engine) PrintRawRoutes(method string) {
 		route := routes[v]
 
 		// count(route.handlers) + uri
-		fmt.Printf("(%2d) %s\n", len(route.handlers), v)
+		fmt.Printf("[%3d] %s\n", len(route.handlers), v)
 	}
 }
 
 // order by add router order
+// output: [method : count(handler)] uri
 func (e *Engine) PrintRawAllRoutes() {
+	if len(e.routeStore.routeSlice) == 0 {
+		fmt.Printf("%s\n", "no route")
+		return
+	}
+
 	for _, v := range e.routeStore.routeSlice {
 		// count(router.handlers) + uri
-		fmt.Printf("(%7s) %s : %d\n", v.method, v.uri, len(v.handlers))
+		fmt.Printf("[%-7s : %d] %s\n", v.method, len(v.handlers), v.uri)
 	}
 }
 
 // print release router tree by method
 // len(tree.handlers) includes middleware
-// TODO print handler name in []handler
 func (e *Engine) PrintRouterTree(method string) {
 	_, idx := checkMethod(method)
-	tree := e.routers[idx]
-	if tree == nil {
+	root := e.routers[idx]
+	if root == nil {
 		fmt.Printf("%s\n", "no route")
 		return
 	}
 
-	fmt.Printf("%s [%d]\n", "/", len(tree.handlers))
-	printTreeNode(tree, "")
+	for _, v := range root.endNodes {
+		if v.pattern == "" { // is "/"
+			fmt.Printf("%s [%3d]\n", "/", len(v.handlers))
+		}
+	}
+
+	printTreeNode(root, "")
 }
 
 func printNode(prefix string, node *node, isLeaf bool) {
 	if isLeaf {
-		fmt.Printf("%s %s [%d]\n", prefix, node.pattern, len(node.handlers))
+		fmt.Printf("%s %s [%3d]\n", prefix, node.pattern, len(node.handlers))
 	} else {
 		fmt.Printf("%s %s\n", prefix, node.pattern)
 	}
@@ -140,6 +153,10 @@ func printTreeNode(node *node, prefix string) {
 		}
 	}
 	for i, n := 0, len(node.endNodes); i < n; i++ {
+		if node.parent == nil && node.endNodes[i].pattern == "" { // is "/"
+			continue
+		}
+
 		if i == n-1 { // leaf
 			printNode(prefix+_PREFIX_LEAF, node.endNodes[i], true)
 		} else {

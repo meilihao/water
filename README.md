@@ -21,101 +21,100 @@ example see [engine_test.go](/engine_test.go)
 output(router tree):
 ```sh
  Raw Router Tree:
-├── / [GET     : 1]
-├── /help [GET     : 1]
-├── /about [GET     : 1]
-├── /about [POST    : 1]
-├── /about [DELETE  : 1]
-├── /about [PUT     : 1]
-├── /about [PATCH   : 1]
-├── /about [HEAD    : 1]
-├── /* [OPTIONS : 0]
+├── / [GET     : 2]
+├── /help [GET     : 2]
+├── /about [GET     : 2]
+├── /about [POST    : 2]
+├── /about [DELETE  : 2]
+├── /about [PUT     : 2]
+├── /about [PATCH   : 2]
+├── /about [HEAD    : 2]
+├── /* [OPTIONS : 1]
 ├── /a
-│   ├── /1 [GET     : 1]
-│   ├── /<id:int> [GET     : 1]
+│   ├── /1 [GET     : 3]
+│   ├── /<id:int> [GET     : 3]
 │   └── /b
-│       ├──  [GET     : 2]
-│       ├── /2 [GET     : 1]
-│       ├── /2 [POST    : 1]
-│       ├── /2 [DELETE  : 1]
-│       ├── /2 [PUT     : 1]
-│       ├── /2 [PATCH   : 1]
-│       ├── /<id ~ 70|80> [PUT     : 1]
-│       └── /* [GET     : 1]
-├── /d2/<id ~ z(d*)b> [GET     : 1]
-├── /d2/<id1,id2 ~ z(d*)h(u)b> [GET     : 1]
+│       ├──  [GET     : 4]
+│       ├── /2 [GET     : 3]
+│       ├── /2 [POST    : 3]
+│       ├── /2 [DELETE  : 3]
+│       ├── /2 [PUT     : 3]
+│       ├── /2 [PATCH   : 3]
+│       ├── /<id ~ 70|80> [PUT     : 3]
+│       └── /* [GET     : 3]
+├── /d2/<id ~ z(d*)b> [GET     : 2]
+├── /d2/<id1,id2 ~ z(d*)h(u)b> [GET     : 2]
 ├── /c
-│   ├── /<_ ~ 70|80> [PUT     : 1]
-│   ├── /<_> [GET     : 1]
-│   └── /*file [GET     : 1]
+│   ├── /<_ ~ 70|80> [PUT     : 2]
+│   ├── /<_> [GET     : 2]
+│   └── /*file [GET     : 2]
 └── /d
-    └── /*_ [GET     : 1]
+    └── /*_ [GET     : 2]
 
 
  GET's Routes:
-( 2) /
-( 3) /a/1
-( 3) /a/<id:int>
-( 4) /a/b
-( 3) /a/b/*
-( 3) /a/b/2
-( 2) /about
-( 2) /c/*file
-( 2) /c/<_>
-( 2) /d/*_
-( 2) /d2/<id ~ z(d*)b>
-( 2) /d2/<id1,id2 ~ z(d*)h(u)b>
-( 2) /help
+[  2] /
+[  3] /a/1
+[  3] /a/<id:int>
+[  4] /a/b
+[  3] /a/b/*
+[  3] /a/b/2
+[  2] /about
+[  2] /c/*file
+[  2] /c/<_>
+[  2] /d/*_
+[  2] /d2/<id ~ z(d*)b>
+[  2] /d2/<id1,id2 ~ z(d*)h(u)b>
+[  2] /help
 
 
  All Routes:
-(    GET) /
-(    GET) /help
-(    GET) /about
-(   POST) /about
-( DELETE) /about
-(    PUT) /about
-(  PATCH) /about
-(   HEAD) /about
-(OPTIONS) /*
-(    GET) /a/1
-(    GET) /a/<id:int>
-(    GET) /a/b
-(    GET) /a/b/2
-(   POST) /a/b/2
-( DELETE) /a/b/2
-(    PUT) /a/b/2
-(  PATCH) /a/b/2
-(    PUT) /a/b/<id ~ 70|80>
-(    GET) /a/b/*
-(    GET) /d2/<id ~ z(d*)b>
-(    GET) /d2/<id1,id2 ~ z(d*)h(u)b>
-(    PUT) /c/<_ ~ 70|80>
-(    GET) /c/<_>
-(    GET) /c/*file
-(    GET) /d/*_
+[GET     : 2] /
+[GET     : 2] /help
+[GET     : 2] /about
+[POST    : 2] /about
+[DELETE  : 2] /about
+[PUT     : 2] /about
+[PATCH   : 2] /about
+[HEAD    : 2] /about
+[OPTIONS : 1] /*
+[GET     : 3] /a/1
+[GET     : 3] /a/<id:int>
+[GET     : 4] /a/b
+[GET     : 3] /a/b/2
+[POST    : 3] /a/b/2
+[DELETE  : 3] /a/b/2
+[PUT     : 3] /a/b/2
+[PATCH   : 3] /a/b/2
+[PUT     : 3] /a/b/<id ~ 70|80>
+[GET     : 3] /a/b/*
+[GET     : 2] /d2/<id ~ z(d*)b>
+[GET     : 2] /d2/<id1,id2 ~ z(d*)h(u)b>
+[PUT     : 2] /c/<_ ~ 70|80>
+[GET     : 2] /c/<_>
+[GET     : 2] /c/*file
+[GET     : 2] /d/*_
 
 
  GET's Release Router Tree:
-/ [0]
+/ [  2]
 ├── a
 │   ├── b
-│   │   ├── 2 [3]
-│   │   └── * [3]
-│   ├── 1 [3]
-│   ├── b [4]
-│   └── <id:int> [3]
+│   │   ├── 2 [  3]
+│   │   └── * [  3]
+│   ├── 1 [  3]
+│   ├── b [  4]
+│   └── <id:int> [  3]
 ├── d2
-│   ├── <id ~ z(d*)b> [2]
-│   └── <id1,id2 ~ z(d*)h(u)b> [2]
+│   ├── <id ~ z(d*)b> [  2]
+│   └── <id1,id2 ~ z(d*)h(u)b> [  2]
 ├── c
-│   ├── <_> [2]
-│   └── *file [2]
+│   ├── <_> [  2]
+│   └── *file [  2]
 ├── d
-│   └── *_ [2]
-├──  [2]
-├── help [2]
-└── about [2]
+│   └── *_ [  2]
+├── help [  2]
+└── about [  2]
 ```
 
 ## Middlewares
