@@ -14,14 +14,15 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// only *multipart.FileHeader or []*multipart.FileHeader
 func TestFormMultipartBindingBindOneFile(t *testing.T) {
 	var s struct {
-		FileValue   multipart.FileHeader     `form:"file"`
-		FilePtr     *multipart.FileHeader    `form:"file"`
-		SliceValues []multipart.FileHeader   `form:"file"`
-		SlicePtrs   []*multipart.FileHeader  `form:"file"`
-		ArrayValues [1]multipart.FileHeader  `form:"file"`
-		ArrayPtrs   [1]*multipart.FileHeader `form:"file"`
+		//FileValue   multipart.FileHeader     `form:"file"`
+		FilePtr *multipart.FileHeader `form:"file"`
+		//SliceValues []multipart.FileHeader   `form:"file"`
+		SlicePtrs []*multipart.FileHeader `form:"file"`
+		//ArrayValues [1]multipart.FileHeader  `form:"file"`
+		//ArrayPtrs   [1]*multipart.FileHeader `form:"file"`
 	}
 	file := testFile{"file", "file1", []byte("hello")}
 
@@ -29,22 +30,22 @@ func TestFormMultipartBindingBindOneFile(t *testing.T) {
 	err := FormMultipart.Bind(req, &s)
 	assert.NoError(t, err)
 
-	assertMultipartFileHeader(t, &s.FileValue, file)
+	//assertMultipartFileHeader(t, &s.FileValue, file)
 	assertMultipartFileHeader(t, s.FilePtr, file)
-	assert.Len(t, s.SliceValues, 1)
-	assertMultipartFileHeader(t, &s.SliceValues[0], file)
+	//assert.Len(t, s.SliceValues, 1)
+	//assertMultipartFileHeader(t, &s.SliceValues[0], file)
 	assert.Len(t, s.SlicePtrs, 1)
 	assertMultipartFileHeader(t, s.SlicePtrs[0], file)
-	assertMultipartFileHeader(t, &s.ArrayValues[0], file)
-	assertMultipartFileHeader(t, s.ArrayPtrs[0], file)
+	//assertMultipartFileHeader(t, &s.ArrayValues[0], file)
+	//assertMultipartFileHeader(t, s.ArrayPtrs[0], file)
 }
 
 func TestFormMultipartBindingBindTwoFiles(t *testing.T) {
 	var s struct {
-		SliceValues []multipart.FileHeader   `form:"file"`
-		SlicePtrs   []*multipart.FileHeader  `form:"file"`
-		ArrayValues [2]multipart.FileHeader  `form:"file"`
-		ArrayPtrs   [2]*multipart.FileHeader `form:"file"`
+		//SliceValues []multipart.FileHeader   `form:"file"`
+		SlicePtrs []*multipart.FileHeader `form:"file"`
+		//ArrayValues [2]multipart.FileHeader  `form:"file"`
+		// [2]*multipart.FileHeader `form:"file"`
 	}
 	files := []testFile{
 		{"file", "file1", []byte("hello")},
@@ -55,16 +56,16 @@ func TestFormMultipartBindingBindTwoFiles(t *testing.T) {
 	err := FormMultipart.Bind(req, &s)
 	assert.NoError(t, err)
 
-	assert.Len(t, s.SliceValues, len(files))
+	//assert.Len(t, s.SliceValues, len(files))
 	assert.Len(t, s.SlicePtrs, len(files))
-	assert.Len(t, s.ArrayValues, len(files))
-	assert.Len(t, s.ArrayPtrs, len(files))
+	//assert.Len(t, s.ArrayValues, len(files))
+	//assert.Len(t, s.ArrayPtrs, len(files))
 
 	for i, file := range files {
-		assertMultipartFileHeader(t, &s.SliceValues[i], file)
+		//assertMultipartFileHeader(t, &s.SliceValues[i], file)
 		assertMultipartFileHeader(t, s.SlicePtrs[i], file)
-		assertMultipartFileHeader(t, &s.ArrayValues[i], file)
-		assertMultipartFileHeader(t, s.ArrayPtrs[i], file)
+		//assertMultipartFileHeader(t, &s.ArrayValues[i], file)
+		//assertMultipartFileHeader(t, s.ArrayPtrs[i], file)
 	}
 }
 

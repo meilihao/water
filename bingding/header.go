@@ -12,7 +12,7 @@ func (headerBinding) Name() string {
 	return "header"
 }
 
-func (headerBinding) Bind(req *http.Request, obj interface{}) error {
+func (headerBinding) Bind2(req *http.Request, obj interface{}) error {
 	_, err := mapping(reflect.ValueOf(obj), emptyField, headerSource(req.Header), "header")
 	if err != nil {
 		return err
@@ -20,7 +20,7 @@ func (headerBinding) Bind(req *http.Request, obj interface{}) error {
 	return validate(obj)
 }
 
-func (headerBinding) Bind2(req *http.Request, obj interface{}) error {
+func (headerBinding) Bind(req *http.Request, obj interface{}) error {
 	if err := MapForm(obj, req.Header, nil, "header"); err != nil {
 		return err
 	}

@@ -16,7 +16,7 @@ func (formBinding) Name() string {
 	return "form"
 }
 
-func (formBinding) Bind(req *http.Request, obj interface{}) error {
+func (formBinding) Bind2(req *http.Request, obj interface{}) error {
 	if req.Form == nil {
 		if err := req.ParseForm(); err != nil {
 			return err
@@ -30,7 +30,7 @@ func (formBinding) Bind(req *http.Request, obj interface{}) error {
 	return validate(obj)
 }
 
-func (formBinding) Bind2(req *http.Request, obj interface{}) error {
+func (formBinding) Bind(req *http.Request, obj interface{}) error {
 	if req.Form == nil {
 		if err := req.ParseForm(); err != nil {
 			return err
@@ -50,7 +50,7 @@ func (formMultipartBinding) Name() string {
 	return "multipart/form-data"
 }
 
-func (b formMultipartBinding) Bind(req *http.Request, obj interface{}) error {
+func (b formMultipartBinding) Bind2(req *http.Request, obj interface{}) error {
 	if req.MultipartForm == nil {
 		if err := req.ParseMultipartForm(defaultMemory); err != nil {
 			return err
@@ -64,14 +64,14 @@ func (b formMultipartBinding) Bind(req *http.Request, obj interface{}) error {
 	return validate(obj)
 }
 
-func (b formMultipartBinding) Bind2(req *http.Request, obj interface{}) error {
+func (b formMultipartBinding) Bind(req *http.Request, obj interface{}) error {
 	if req.MultipartForm == nil {
 		if err := req.ParseMultipartForm(defaultMemory); err != nil {
 			return err
 		}
 	}
 
-	if err := MapForm(obj, req.MultipartForm.Value, req.Response.Request.MultipartForm.File, "form"); err != nil {
+	if err := MapForm(obj, req.MultipartForm.Value, req.MultipartForm.File, "form"); err != nil {
 		return err
 	}
 

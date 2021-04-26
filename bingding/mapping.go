@@ -16,8 +16,10 @@ var (
 )
 
 type setOptions struct {
-	isDefaultExists bool
-	defaultValue    string
+	defaultValue string
+	timeFormat   string
+	timeUtc      string
+	timeLocation string
 }
 
 // setter tries to set value on a walking by fields of a struct
@@ -52,7 +54,6 @@ func tryToSetValue(value reflect.Value, field reflect.StructField, setter setter
 		opt, opts = head(opts, ",")
 
 		if k, v := head(opt, "="); k == "default" {
-			setOpt.isDefaultExists = true
 			setOpt.defaultValue = v
 		}
 	}
@@ -116,7 +117,7 @@ func mapping(value reflect.Value, field reflect.StructField, setter setter, tag 
 
 func setByForm(value reflect.Value, field reflect.StructField, form map[string][]string, tagValue string, opt setOptions) (isSetted bool, err error) {
 	vs, ok := form[tagValue]
-	if !ok && !opt.isDefaultExists {
+	if !ok && opt.defaultValue == "" {
 		return false, nil
 	}
 
@@ -424,6 +425,57 @@ func setTimeField(val string, structField reflect.StructField, value reflect.Val
 	}
 
 	if locTag := structField.Tag.Get("time_location"); locTag != "" {
+		loc, err := time.LoadLocation(locTag)
+		if err != nil {
+			return err
+		}
+		l = loc
+	}
+
+	t, err := time.ParseInLocation(timeFormat, val, l)
+	if err != nil {
+		return err
+	}
+
+	value.Set(reflect.ValueOf(t))
+	return nil
+}
+
+func setTimeField2(val string, opt *setOptions, value reflect.Value) error {
+	timeFormat := opt.timeFormat
+	if timeFormat == "" {
+		timeFormat = time.RFC3339
+	}
+
+	switch tf := strings.ToLower(timeFormat); tf {
+	case "unix", "unixnano":
+		tv, err := strconv.ParseInt(val, 10, 64)
+		if err != nil {
+			return err
+		}
+
+		d := time.Duration(1)
+		if tf == "unixnano" {
+			d = time.Second
+		}
+
+		t := time.Unix(tv/int64(d), tv%int64(d))
+		value.Set(reflect.ValueOf(t))
+		return nil
+
+	}
+
+	if val == "" {
+		value.Set(reflect.ValueOf(time.Time{}))
+		return nil
+	}
+
+	l := time.Local
+	if isUTC, _ := strconv.ParseBool(opt.timeUtc); isUTC {
+		l = time.UTC
+	}
+
+	if locTag := opt.timeLocation; locTag != "" {
 		loc, err := time.LoadLocation(locTag)
 		if err != nil {
 			return err
