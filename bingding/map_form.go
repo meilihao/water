@@ -39,24 +39,6 @@ func MapForm(obj interface{}, form map[string][]string,
 	return _mapForm(formStruct, form, formfile, tag)
 }
 
-// func _redirectValue(typ reflect.Type, formStruct reflect.Value) (reflect.Type, reflect.Value) {
-// 	for {
-// 		if typ.Kind() == reflect.Ptr {
-// 			break
-// 		}
-
-// 			if formStruct.IsNil() {
-// 				formStruct = reflect.New(typ.Elem()).Elem()
-// 			} else {
-// 				formStruct = formStruct.Elem()
-// 			}
-
-// 			typ = formStruct.Type()
-// 	}
-
-// 	return
-// }
-
 func _mapForm(formStruct reflect.Value, form map[string][]string,
 	formfile map[string][]*multipart.FileHeader, tag string) error {
 	if formStruct.Kind() == reflect.Ptr {
@@ -80,7 +62,7 @@ func _mapForm(formStruct reflect.Value, form map[string][]string,
 			}
 		}
 
-		if structField.Kind() == reflect.Struct || typeField.Anonymous { // typeField.Anonymous is an embedded field
+		if (structField.Kind() == reflect.Struct && structField.Type() != timeType) || typeField.Anonymous { // typeField.Anonymous is an embedded field
 			if err := _mapForm(structField, form, formfile, tag); err != nil {
 				return err
 			}
@@ -96,6 +78,7 @@ func _mapForm(formStruct reflect.Value, form map[string][]string,
 
 var (
 	multipartFileType = reflect.TypeOf((*multipart.FileHeader)(nil))
+	timeType          = reflect.TypeOf((*time.Time)(nil)).Elem()
 )
 
 // typeField does't use typeField.Type.Kind(), typeField only form tag in here
