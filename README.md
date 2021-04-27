@@ -126,11 +126,15 @@ There are already some middlewares to simplify your work:
 - logger
 - recovery
 - cors
+- static
 - [cache](https://github.com/meilihao/water-contrib/tree/master/cache) : [cache-memory](https://github.com/meilihao/water-contrib/tree/master/cache),[cache-ssdb](https://github.com/meilihao/water-contrib/tree/master/cache/ssdb)
 - [reqestDump](https://github.com/meilihao/water-contrib/tree/master/debug)
 
 ## Router
 - default Any() exclude ["Head","Options"], but can reset by `water.MethodAnyExclude`
+
+## binding
+support gin style binding.
 
 ## Getting Help
 
