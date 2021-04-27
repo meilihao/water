@@ -2,7 +2,7 @@ package water
 
 // version
 const (
-	VERSION = "1.0.0.20210423"
+	VERSION = "2.0.0"
 )
 
 // all status
