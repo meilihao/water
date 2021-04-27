@@ -47,6 +47,7 @@ type BeforeHandler func(http.ResponseWriter, *http.Request) bool
 
 // --- water ---
 type Engine struct {
+	*options
 	rootRouter    *Router
 	routers       [8]*node
 	routersStatic [8]map[string]*node
@@ -92,8 +93,11 @@ func (e *Engine) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	ctx.reset()
 
 	// fast match for static routes
-	if ctx.endNode = e.routersStatic[index][req.URL.Path]; ctx.endNode != nil {
-	} else {
+	if e.options.EnableStaticRouter {
+		ctx.endNode = e.routersStatic[index][req.URL.Path]
+	}
+
+	if ctx.endNode == nil {
 		// curl http://localhost:8081 or http://localhost:8081/ -> req.URL.Path=="/"
 		ctx.endNode, ctx.Params = e.routers[index].Match(req.URL.Path)
 	}
@@ -159,7 +163,7 @@ func (e *Engine) buildTree() {
 			e.routers[MethodIndex(v.method)] = t
 		}
 
-		if isStaticRoute(endNode) {
+		if e.options.EnableStaticRouter && isStaticRoute(endNode) {
 			if e.routersStatic[MethodIndex(v.method)] == nil {
 				e.routersStatic[MethodIndex(v.method)] = map[string]*node{}
 			}

@@ -250,9 +250,14 @@ func getRoute(r *Router) *route {
 
 // to generate router tree.
 // r is root router.
-func (r *Router) Handler() *Engine {
+func (r *Router) Handler(opts ...Option) *Engine {
 	if r.parent != nil {
 		panic("sub router not allowed: Handler()")
+	}
+
+	o := &options{}
+	for _, f := range opts {
+		f(o)
 	}
 
 	rs := newRouteStore()
@@ -271,6 +276,7 @@ func (r *Router) Handler() *Engine {
 	w := newWater()
 	w.rootRouter = r
 	w.routeStore = rs
+	w.options = o
 	w.buildTree()
 
 	return w

@@ -40,7 +40,11 @@ func TestEngine(t *testing.T) {
 		r.GET("/*_", test) // ignore match all
 	})
 
-	w := router.Handler()
+	opts := []Option{
+		WithStaticRouter(true),
+	}
+
+	w := router.Handler(opts...)
 
 	fmt.Println("\n\n", "Raw Router Tree:")
 	w.PrintRawRouter()
