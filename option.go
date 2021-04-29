@@ -1,13 +1,14 @@
 package water
 
 type options struct {
-	// 适用于多静态路由的场景
 	EnableStaticRouter bool
 	NoFoundHandler     Handler
 }
 
 type Option func(*options)
 
+// WithStaticRouter for the scene of multi status route
+// 适用于多静态路由的场景
 func WithStaticRouter(enable bool) Option {
 	return func(o *options) {
 		o.EnableStaticRouter = enable
