@@ -18,13 +18,21 @@ func (f HandlerFunc) ServeHTTP(ctx *Context) {
 	f(ctx)
 }
 
-// unsupport http.Handler for default
+// support http.Handler, but not recommended
 func newHandler(handler interface{}) Handler {
 	switch h := handler.(type) {
 	case Handler:
 		return h
 	case func(*Context):
 		return HandlerFunc(h)
+	case http.Handler:
+		return HandlerFunc(func(ctx *Context) {
+			h.ServeHTTP(ctx, ctx.Request)
+		})
+	case func(http.ResponseWriter, *http.Request):
+		return HandlerFunc(func(ctx *Context) {
+			h(ctx, ctx.Request)
+		})
 	default:
 		panic("unsupported handler")
 	}

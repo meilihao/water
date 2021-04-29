@@ -13,6 +13,7 @@ func TestEngine(t *testing.T) {
 
 	router.GET("/", test)
 	router.GET("/help", test)
+	router.GET("/help2", testRaw)
 	router.ANY("/about", test)
 	router.HEAD("/about", test)
 	router.OPTIONS("/*")
@@ -81,4 +82,9 @@ func test2(ctx *Context) {
 
 func test3(ctx *Context) {
 	ctx.JSON(200, ctx.Params)
+}
+
+// support http.Handler, but not recommended
+func testRaw(w http.ResponseWriter, req *http.Request) {
+	w.Write([]byte(req.URL.String()))
 }
