@@ -41,9 +41,9 @@ func newHandlers(handlers []interface{}) (a []Handler) {
 	return a
 }
 
-// BeforeHandler represents a handler executes at beginning of every request(before HandlerFuncs).
-// Water stops future process when it returns true.
-type BeforeHandler func(http.ResponseWriter, *http.Request) bool
+// // BeforeHandler represents a handler executes at beginning of every request(before HandlerFuncs).
+// // Water stops future process when it returns true.
+// type BeforeHandler func(http.ResponseWriter, *http.Request) bool
 
 // --- water ---
 type Engine struct {
@@ -55,7 +55,6 @@ type Engine struct {
 	ctxPool       sync.Pool
 
 	// BeforeHandlers []BeforeHandler
-	noRouteHandler Handler
 }
 
 func newWater() *Engine {
@@ -69,12 +68,6 @@ func newWater() *Engine {
 	}
 
 	return e
-}
-
-// SetNoFoundHandler the handler for no match route
-// for vue spa
-func (e *Engine) SetNoFoundHandler(h Handler) {
-	e.noRouteHandler = h
 }
 
 func (e *Engine) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
@@ -103,8 +96,8 @@ func (e *Engine) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	if ctx.endNode == nil {
-		if e.noRouteHandler != nil {
-			e.noRouteHandler.ServeHTTP(ctx)
+		if e.options.NoFoundHandler != nil {
+			e.options.NoFoundHandler.ServeHTTP(ctx)
 		} else {
 			ctx.WriteHeader(http.StatusNotFound)
 		}
