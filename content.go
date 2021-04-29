@@ -312,9 +312,9 @@ func (ctx *Context) FullPath() string {
 	return ""
 }
 
-const (
-	// MaxMultipartMemory
-	DefaultMaxMemory = 10 << 20 // 10MB
+var (
+	// MultipartMemory
+	defaultMultipartMemory int64 = 32 << 20 // 32MB
 )
 
 // ParseFormOrMultipartForm parses the raw query from the URL.
@@ -326,7 +326,7 @@ func (ctx *Context) ParseFormOrMultipartForm() {
 
 	if (ctx.Request.Method == http.MethodPost || ctx.Request.Method == http.MethodPut || ctx.Request.Method == http.MethodPatch) &&
 		strings.Contains(ctx.Request.Header.Get("Content-Type"), "multipart/form-data") {
-		if err := ctx.Request.ParseMultipartForm(DefaultMaxMemory); err != nil {
+		if err := ctx.Request.ParseMultipartForm(defaultMultipartMemory); err != nil {
 			panic(errors.New("parseMultipartForm error:" + err.Error()))
 		}
 	} else {

@@ -3,6 +3,7 @@ package water
 type options struct {
 	EnableStaticRouter bool
 	NoFoundHandler     Handler
+	MaxMultipartMemory int64
 }
 
 type Option func(*options)
@@ -20,5 +21,12 @@ func WithStaticRouter(enable bool) Option {
 func WithNoFoundHandler(h Handler) Option {
 	return func(o *options) {
 		o.NoFoundHandler = h
+	}
+}
+
+// WithMaxMultipartMemory is given to http.Request's ParseMultipartForm method call.
+func WithMaxMultipartMemory(max int64) Option {
+	return func(o *options) {
+		o.MaxMultipartMemory = max
 	}
 }

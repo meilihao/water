@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"strings"
 	"sync"
+
+	"github.com/meilihao/water/binding"
 )
 
 var (
@@ -274,9 +276,14 @@ func (r *Router) Handler(opts ...Option) *Engine {
 	}
 
 	w := newWater()
+
 	w.rootRouter = r
 	w.routeStore = rs
 	w.options = o
+
+	defaultMultipartMemory = w.options.MaxMultipartMemory
+	binding.SetMultipartMemory(defaultMultipartMemory)
+
 	w.buildTree()
 
 	return w
