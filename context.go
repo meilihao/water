@@ -30,13 +30,6 @@ type Context struct {
 	parsedParams bool
 }
 
-type ResponseWriter interface {
-	http.ResponseWriter
-	//http.CloseNotifier
-	//http.Flusher
-	//http.Hijacker
-}
-
 func newContext() *Context {
 	return &Context{}
 }
