@@ -252,7 +252,8 @@ func (ctx *Context) String(code int, str string) {
 	ctx.Write([]byte(str))
 }
 
-func (ctx *Context) HTML(code int, str string) {
+// HTMLRaw not use render
+func (ctx *Context) HTMLRaw(code int, str string) {
 	ctx.WriteHeader(code)
 	ctx.Header().Set(HeaderContentType, MIMETextHTMLCharsetUTF8)
 	ctx.Write([]byte(str))
