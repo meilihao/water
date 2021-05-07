@@ -93,6 +93,9 @@ func (e *Engine) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	ctx := e.ctxPool.Get().(*Context)
 	ctx.reset()
 
+	ctx.ResponseWriter = rw.(ResponseWriter)
+	ctx.Request = req
+
 	// fast match for static routes
 	if e.options.EnableStaticRouter {
 		ctx.endNode = e.routersStatic[index][req.URL.Path]
@@ -115,9 +118,6 @@ func (e *Engine) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	ctx.Environ = make(Environ)
-
-	ctx.ResponseWriter = rw.(ResponseWriter)
-	ctx.Request = req
 
 	ctx.handlers = ctx.endNode.handlers
 	ctx.handlersLength = len(ctx.handlers)
