@@ -1,7 +1,7 @@
 package water
 
 const (
-	DEFAULT_TPL_SET_NAME = "DEFAULT"
+	DEFAULT_TPL_SET_NAME = ""
 )
 
 var _render Render
