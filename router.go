@@ -250,10 +250,14 @@ func getRoute(r *Router) *route {
 	return re
 }
 
+func (r *Router) IsParent() bool {
+	return r.parent == nil
+}
+
 // to generate router tree.
 // r is root router.
 func (r *Router) Handler(opts ...Option) *Engine {
-	if r.parent != nil {
+	if !r.IsParent() {
 		panic("sub router not allowed: Handler()")
 	}
 
@@ -309,7 +313,7 @@ func _VariantUri(raw string) string {
 }
 
 func (r *Router) Classic() {
-	if r.parent != nil {
+	if !r.IsParent() {
 		panic("sub router not allowed : Classic()")
 	}
 
