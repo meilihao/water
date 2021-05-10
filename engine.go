@@ -113,18 +113,19 @@ func (e *Engine) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 
 	if ctx.endNode == nil {
 		if len(e.options.NoFoundHandlers) != 0 {
-			ctx.endNode.handlers = e.options.NoFoundHandlers
+			ctx.handlers = e.options.NoFoundHandlers
 		} else {
 			ctx.WriteHeader(http.StatusNotFound)
 
 			e.ctxPool.Put(ctx)
 			return
 		}
+	} else {
+		ctx.handlers = ctx.endNode.handlers
 	}
 
 	ctx.Environ = make(Environ)
 
-	ctx.handlers = ctx.endNode.handlers
 	ctx.handlersLength = len(ctx.handlers)
 
 	ctx.run()
