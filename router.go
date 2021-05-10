@@ -86,6 +86,10 @@ func (rs *routeStore) add(r *route) {
 	rs.lock.Lock()
 	defer rs.lock.Unlock()
 
+	if r.method == "" { // end route is middleware
+		return
+	}
+
 	if rs.routeMap[r.method][r.uri] != nil {
 		panic(fmt.Sprintf("double uri : %s[%s]", r.method, r.uri))
 	}
@@ -201,7 +205,7 @@ func (r *Router) HEAD(pattern string, handlers ...interface{}) {
 
 // add all route to routeStore
 func dumpRoute(r *Router, rs *routeStore) {
-	if r.sub == nil {
+	if r.sub == nil { // end route
 		rs.add(getRoute(r))
 		return
 	}
@@ -260,9 +264,6 @@ func (r *Router) Handler(opts ...Option) *Engine {
 	if !r.IsParent() {
 		panic("sub router not allowed: Handler()")
 	}
-	if len(r.sub) == 0 {
-		panic("no route: Handler()")
-	}
 
 	o := &options{}
 	for _, f := range opts {
@@ -272,6 +273,10 @@ func (r *Router) Handler(opts ...Option) *Engine {
 	rs := newRouteStore()
 
 	dumpRoute(r, rs)
+
+	// if len(rs.routeSlice) == 0 {
+	// 	panic("no route: Handler()")
+	// }
 
 	// check uri
 	for _, v := range rs.routeSlice {

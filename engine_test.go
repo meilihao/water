@@ -95,13 +95,17 @@ func TestEngineNoRoute(t *testing.T) {
 
 	router.Use(middleware)
 
-	defer func() {
-		if err := recover(); err == nil {
-			t.Fatal("no route need panic")
-		}
-	}()
+	e := router.Handler()
 
-	_ = router.Handler()
+	{
+		resp := httptest.NewRecorder()
+		req, _ := http.NewRequest("GET", "http://localhost:8080/a", nil)
+		e.ServeHTTP(resp, req)
+		if resp.Code != http.StatusNotFound {
+			t.Fatalf("want %d, get %d", http.StatusNotFound, resp.Code)
+		}
+	}
+
 }
 
 func TestNoMethodRoute(t *testing.T) {
