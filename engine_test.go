@@ -88,3 +88,17 @@ func test3(ctx *Context) {
 func testRaw(w http.ResponseWriter, req *http.Request) {
 	w.Write([]byte(req.URL.String()))
 }
+
+func TestEngineNoRoute(t *testing.T) {
+	router := NewRouter()
+
+	router.Use(middleware)
+
+	defer func() {
+		if err := recover(); err == nil {
+			t.Fatal("no route need panic")
+		}
+	}()
+
+	_ = router.Handler()
+}

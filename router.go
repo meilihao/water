@@ -260,6 +260,9 @@ func (r *Router) Handler(opts ...Option) *Engine {
 	if !r.IsParent() {
 		panic("sub router not allowed: Handler()")
 	}
+	if len(r.sub) == 0 {
+		panic("no route: Handler()")
+	}
 
 	o := &options{}
 	for _, f := range opts {
