@@ -35,7 +35,7 @@ type StaticOptions struct {
 // can send expires, etag, index
 func (r *Router) StaticAdvance(opt *StaticOptions) {
 	if r.parent != nil {
-		panic("sub router not allowed : Static()")
+		panic("sub router not allowed : StaticAdvance()")
 	}
 
 	if len(opt.IndexFile) != 0 {
