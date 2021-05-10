@@ -78,6 +78,7 @@ func newWater() *Engine {
 	return e
 }
 
+// code=404, can't use middleware
 func (e *Engine) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	if !req.ProtoAtLeast(1, 1) || req.RequestURI == "*" || req.Method == "CONNECT" {
 		rw.WriteHeader(http.StatusNotAcceptable)
