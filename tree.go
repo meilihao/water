@@ -210,6 +210,11 @@ func (n *node) addSubNode(segment, pattern string, handlers []Handler) *node {
 
 // --- match uri
 func (n *node) Match(uri string) (*node, Params) {
+	// no method router tree
+	if n == nil {
+		return nil, nil
+	}
+
 	uri = strings.TrimPrefix(uri, "/")
 	uri = strings.TrimSuffix(uri, "/")
 	params := make(Params)

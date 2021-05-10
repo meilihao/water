@@ -3,6 +3,7 @@ package water
 import (
 	"fmt"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 )
 
@@ -101,4 +102,31 @@ func TestEngineNoRoute(t *testing.T) {
 	}()
 
 	_ = router.Handler()
+}
+
+func TestNoMethodRoute(t *testing.T) {
+	r := NewRouter()
+	r.GET("/a", func(c *Context) {
+
+	})
+	e := r.Handler()
+
+	{
+		resp := httptest.NewRecorder()
+		req, _ := http.NewRequest("GET", "http://localhost:8080/docs/openapi-ui", nil)
+		e.ServeHTTP(resp, req)
+		if resp.Code != http.StatusNotFound {
+			t.Fatalf("want %d, get %d", http.StatusNotFound, resp.Code)
+		}
+	}
+
+	// no POST router tree
+	{
+		resp := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "http://localhost:8080/docs/openapi", nil)
+		e.ServeHTTP(resp, req)
+		if resp.Code != http.StatusNotFound {
+			t.Fatalf("want %d, get %d", http.StatusNotFound, resp.Code)
+		}
+	}
 }
