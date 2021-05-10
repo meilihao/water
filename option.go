@@ -2,7 +2,7 @@ package water
 
 type options struct {
 	EnableStaticRouter bool
-	NoFoundHandler     Handler
+	NoFoundHandlers    []Handler
 	MaxMultipartMemory int64
 }
 
@@ -16,11 +16,15 @@ func WithStaticRouter(enable bool) Option {
 	}
 }
 
-// WithNoFoundHandler the handler for no match route
-// for vue spa
-func WithNoFoundHandler(h Handler) Option {
+// WithNoFoundHandlers the handler for no match route, example: vue spa
+// code=404, can use middleware
+func WithNoFoundHandlers(hs ...Handler) Option {
+	if len(hs) == 0 {
+		panic("no NoFoundHandlers")
+	}
+
 	return func(o *options) {
-		o.NoFoundHandler = h
+		o.NoFoundHandlers = hs
 	}
 }
 

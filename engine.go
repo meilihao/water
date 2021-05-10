@@ -49,6 +49,11 @@ func newHandlers(handlers []interface{}) (a []Handler) {
 	return a
 }
 
+// WrapHandlerFunc wrap func to HandlerFunc
+func WrapHandler(handler interface{}) Handler {
+	return newHandler(handler)
+}
+
 // // BeforeHandler represents a handler executes at beginning of every request(before HandlerFuncs).
 // // Water stops future process when it returns true.
 // type BeforeHandler func(http.ResponseWriter, *http.Request) bool
@@ -78,7 +83,6 @@ func newWater() *Engine {
 	return e
 }
 
-// code=404, can't use middleware
 func (e *Engine) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	if !req.ProtoAtLeast(1, 1) || req.RequestURI == "*" || req.Method == "CONNECT" {
 		rw.WriteHeader(http.StatusNotAcceptable)
@@ -108,14 +112,14 @@ func (e *Engine) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	if ctx.endNode == nil {
-		if e.options.NoFoundHandler != nil {
-			e.options.NoFoundHandler.ServeHTTP(ctx)
+		if len(e.options.NoFoundHandlers) != 0 {
+			ctx.endNode.handlers = e.options.NoFoundHandlers
 		} else {
 			ctx.WriteHeader(http.StatusNotFound)
-		}
 
-		e.ctxPool.Put(ctx)
-		return
+			e.ctxPool.Put(ctx)
+			return
+		}
 	}
 
 	ctx.Environ = make(Environ)
