@@ -18,13 +18,13 @@ func WithStaticRouter(enable bool) Option {
 
 // WithNoFoundHandlers the handler for no match route, example: vue spa
 // code=404, can use middleware
-func WithNoFoundHandlers(hs ...Handler) Option {
+func WithNoFoundHandlers(hs ...interface{}) Option {
 	if len(hs) == 0 {
 		panic("no NoFoundHandlers")
 	}
 
 	return func(o *options) {
-		o.NoFoundHandlers = hs
+		o.NoFoundHandlers = newHandlers(hs)
 	}
 }
 

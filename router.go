@@ -105,6 +105,7 @@ type Router struct {
 	method  string // only in router leaf
 	pattern string
 
+	gbefores []interface{} // for global middleware, include handle middleware before match routes
 	befores  []interface{}
 	handlers []interface{} // only in router leaf
 
@@ -114,6 +115,15 @@ type Router struct {
 
 func NewRouter() *Router {
 	return &Router{}
+}
+
+// Before for global middleware, include handle middleware before match routes and 404
+func (r *Router) Before(handlers ...interface{}) {
+	if !r.IsParent() {
+		panic("sub router not allowed: Before()")
+	}
+
+	r.gbefores = append(r.gbefores, handlers...)
 }
 
 func (r *Router) Group(pattern string, is ...interface{}) *Router {
@@ -228,8 +238,16 @@ func getRoute(r *Router) *route {
 		}
 		if len(tmp.befores) > 0 {
 			hstmp := make([]interface{}, len(tmp.befores))
-
 			copy(hstmp, tmp.befores)
+
+			hstmp = append(hstmp, hs...)
+			hs = hstmp
+		}
+
+		if len(tmp.gbefores) > 0 {
+			hstmp := make([]interface{}, len(tmp.gbefores))
+			copy(hstmp, tmp.gbefores)
+
 			hstmp = append(hstmp, hs...)
 			hs = hstmp
 		}
@@ -268,6 +286,15 @@ func (r *Router) Handler(opts ...Option) *Engine {
 	o := &options{}
 	for _, f := range opts {
 		f(o)
+	}
+
+	// for global middleware
+	if len(o.NoFoundHandlers) > 0 && len(r.gbefores) > 0 {
+		hstmp := make([]Handler, len(r.gbefores))
+		copy(hstmp, newHandlers(r.gbefores))
+
+		hstmp = append(hstmp, o.NoFoundHandlers...)
+		o.NoFoundHandlers = hstmp
 	}
 
 	rs := newRouteStore()

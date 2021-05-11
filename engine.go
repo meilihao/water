@@ -66,8 +66,6 @@ type Engine struct {
 	routersStatic [8]map[string]*node
 	routeStore    *routeStore
 	ctxPool       sync.Pool
-
-	// BeforeHandlers []BeforeHandler
 }
 
 func newWater() *Engine {
