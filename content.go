@@ -252,6 +252,12 @@ func (ctx *Context) String(code int, str string) {
 	ctx.Write([]byte(str))
 }
 
+func (ctx *Context) Data(code int, contentType string, data []byte) {
+	ctx.WriteHeader(code)
+	ctx.Header().Set(HeaderContentType, contentType)
+	ctx.Write(data)
+}
+
 // HTMLRaw not use render
 func (ctx *Context) HTMLRaw(code int, str string) {
 	ctx.WriteHeader(code)
