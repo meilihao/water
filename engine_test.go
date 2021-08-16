@@ -3,6 +3,7 @@ package water
 import (
 	"fmt"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 )
 
@@ -13,6 +14,7 @@ func TestEngine(t *testing.T) {
 
 	router.GET("/", test)
 	router.GET("/help", test)
+	router.GET("/help2", testRaw)
 	router.ANY("/about", test)
 	router.HEAD("/about", test)
 	router.OPTIONS("/*")
@@ -81,4 +83,54 @@ func test2(ctx *Context) {
 
 func test3(ctx *Context) {
 	ctx.JSON(200, ctx.Params)
+}
+
+// support http.Handler, but not recommended
+func testRaw(w http.ResponseWriter, req *http.Request) {
+	w.Write([]byte(req.URL.String()))
+}
+
+func TestEngineNoRoute(t *testing.T) {
+	router := NewRouter()
+
+	router.Use(middleware)
+
+	e := router.Handler()
+
+	{
+		resp := httptest.NewRecorder()
+		req, _ := http.NewRequest("GET", "http://localhost:8080/a", nil)
+		e.ServeHTTP(resp, req)
+		if resp.Code != http.StatusNotFound {
+			t.Fatalf("want %d, get %d", http.StatusNotFound, resp.Code)
+		}
+	}
+
+}
+
+func TestNoMethodRoute(t *testing.T) {
+	r := NewRouter()
+	r.GET("/a", func(c *Context) {
+
+	})
+	e := r.Handler()
+
+	{
+		resp := httptest.NewRecorder()
+		req, _ := http.NewRequest("GET", "http://localhost:8080/docs/openapi-ui", nil)
+		e.ServeHTTP(resp, req)
+		if resp.Code != http.StatusNotFound {
+			t.Fatalf("want %d, get %d", http.StatusNotFound, resp.Code)
+		}
+	}
+
+	// no POST router tree
+	{
+		resp := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "http://localhost:8080/docs/openapi", nil)
+		e.ServeHTTP(resp, req)
+		if resp.Code != http.StatusNotFound {
+			t.Fatalf("want %d, get %d", http.StatusNotFound, resp.Code)
+		}
+	}
 }

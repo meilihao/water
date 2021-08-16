@@ -18,13 +18,21 @@ func (f HandlerFunc) ServeHTTP(ctx *Context) {
 	f(ctx)
 }
 
-// unsupport http.Handler for default
+// support http.Handler, but not recommended
 func newHandler(handler interface{}) Handler {
 	switch h := handler.(type) {
 	case Handler:
 		return h
 	case func(*Context):
 		return HandlerFunc(h)
+	case http.Handler:
+		return HandlerFunc(func(ctx *Context) {
+			h.ServeHTTP(ctx, ctx.Request)
+		})
+	case func(http.ResponseWriter, *http.Request):
+		return HandlerFunc(func(ctx *Context) {
+			h(ctx, ctx.Request)
+		})
 	default:
 		panic("unsupported handler")
 	}
@@ -41,9 +49,14 @@ func newHandlers(handlers []interface{}) (a []Handler) {
 	return a
 }
 
-// BeforeHandler represents a handler executes at beginning of every request(before HandlerFuncs).
-// Water stops future process when it returns true.
-type BeforeHandler func(http.ResponseWriter, *http.Request) bool
+// WrapHandlerFunc wrap func to HandlerFunc
+func WrapHandler(handler interface{}) Handler {
+	return newHandler(handler)
+}
+
+// // BeforeHandler represents a handler executes at beginning of every request(before HandlerFuncs).
+// // Water stops future process when it returns true.
+// type BeforeHandler func(http.ResponseWriter, *http.Request) bool
 
 // --- water ---
 type Engine struct {
@@ -53,9 +66,6 @@ type Engine struct {
 	routersStatic [8]map[string]*node
 	routeStore    *routeStore
 	ctxPool       sync.Pool
-
-	// BeforeHandlers []BeforeHandler
-	noRouteHandler Handler
 }
 
 func newWater() *Engine {
@@ -69,12 +79,6 @@ func newWater() *Engine {
 	}
 
 	return e
-}
-
-// SetNoFoundHandler the handler for no match route
-// for vue spa
-func (e *Engine) SetNoFoundHandler(h Handler) {
-	e.noRouteHandler = h
 }
 
 func (e *Engine) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
@@ -92,6 +96,9 @@ func (e *Engine) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	ctx := e.ctxPool.Get().(*Context)
 	ctx.reset()
 
+	ctx.ResponseWriter = rw.(ResponseWriter)
+	ctx.Request = req
+
 	// fast match for static routes
 	if e.options.EnableStaticRouter {
 		ctx.endNode = e.routersStatic[index][req.URL.Path]
@@ -103,22 +110,20 @@ func (e *Engine) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	if ctx.endNode == nil {
-		if e.noRouteHandler != nil {
-			e.noRouteHandler.ServeHTTP(ctx)
+		if len(e.options.NoFoundHandlers) != 0 {
+			ctx.handlers = e.options.NoFoundHandlers
 		} else {
 			ctx.WriteHeader(http.StatusNotFound)
-		}
 
-		e.ctxPool.Put(ctx)
-		return
+			e.ctxPool.Put(ctx)
+			return
+		}
+	} else {
+		ctx.handlers = ctx.endNode.handlers
 	}
 
 	ctx.Environ = make(Environ)
 
-	ctx.ResponseWriter = rw.(ResponseWriter)
-	ctx.Request = req
-
-	ctx.handlers = ctx.endNode.handlers
 	ctx.handlersLength = len(ctx.handlers)
 
 	ctx.run()

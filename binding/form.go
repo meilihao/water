@@ -6,9 +6,13 @@ import (
 	"reflect"
 )
 
-const (
-	defaultMemory = 32 << 20
+var (
+	defaultMultipartMemory int64 = 32 << 20
 )
+
+func SetMultipartMemory(n int64) {
+	defaultMultipartMemory = n
+}
 
 type formBinding struct{}
 
@@ -52,7 +56,7 @@ func (formMultipartBinding) Name() string {
 
 func (b formMultipartBinding) Bind2(req *http.Request, obj interface{}) error {
 	if req.MultipartForm == nil {
-		if err := req.ParseMultipartForm(defaultMemory); err != nil {
+		if err := req.ParseMultipartForm(defaultMultipartMemory); err != nil {
 			return err
 		}
 	}
@@ -66,7 +70,7 @@ func (b formMultipartBinding) Bind2(req *http.Request, obj interface{}) error {
 
 func (b formMultipartBinding) Bind(req *http.Request, obj interface{}) error {
 	if req.MultipartForm == nil {
-		if err := req.ParseMultipartForm(defaultMemory); err != nil {
+		if err := req.ParseMultipartForm(defaultMultipartMemory); err != nil {
 			return err
 		}
 	}

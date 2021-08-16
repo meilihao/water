@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"strings"
 	"sync"
+
+	"github.com/meilihao/water/binding"
 )
 
 var (
@@ -84,6 +86,10 @@ func (rs *routeStore) add(r *route) {
 	rs.lock.Lock()
 	defer rs.lock.Unlock()
 
+	if r.method == "" { // end route is middleware
+		return
+	}
+
 	if rs.routeMap[r.method][r.uri] != nil {
 		panic(fmt.Sprintf("double uri : %s[%s]", r.method, r.uri))
 	}
@@ -99,6 +105,7 @@ type Router struct {
 	method  string // only in router leaf
 	pattern string
 
+	gbefores []interface{} // for global middleware, include handle middleware before match routes
 	befores  []interface{}
 	handlers []interface{} // only in router leaf
 
@@ -108,6 +115,15 @@ type Router struct {
 
 func NewRouter() *Router {
 	return &Router{}
+}
+
+// Before for global middleware, include handle middleware before match routes and 404
+func (r *Router) Before(handlers ...interface{}) {
+	if !r.IsParent() {
+		panic("sub router not allowed: Before()")
+	}
+
+	r.gbefores = append(r.gbefores, handlers...)
 }
 
 func (r *Router) Group(pattern string, is ...interface{}) *Router {
@@ -199,7 +215,7 @@ func (r *Router) HEAD(pattern string, handlers ...interface{}) {
 
 // add all route to routeStore
 func dumpRoute(r *Router, rs *routeStore) {
-	if r.sub == nil {
+	if r.sub == nil { // end route
 		rs.add(getRoute(r))
 		return
 	}
@@ -222,8 +238,16 @@ func getRoute(r *Router) *route {
 		}
 		if len(tmp.befores) > 0 {
 			hstmp := make([]interface{}, len(tmp.befores))
-
 			copy(hstmp, tmp.befores)
+
+			hstmp = append(hstmp, hs...)
+			hs = hstmp
+		}
+
+		if len(tmp.gbefores) > 0 {
+			hstmp := make([]interface{}, len(tmp.gbefores))
+			copy(hstmp, tmp.gbefores)
+
 			hstmp = append(hstmp, hs...)
 			hs = hstmp
 		}
@@ -248,10 +272,14 @@ func getRoute(r *Router) *route {
 	return re
 }
 
+func (r *Router) IsParent() bool {
+	return r.parent == nil
+}
+
 // to generate router tree.
 // r is root router.
 func (r *Router) Handler(opts ...Option) *Engine {
-	if r.parent != nil {
+	if !r.IsParent() {
 		panic("sub router not allowed: Handler()")
 	}
 
@@ -260,9 +288,22 @@ func (r *Router) Handler(opts ...Option) *Engine {
 		f(o)
 	}
 
+	// for global middleware
+	if len(o.NoFoundHandlers) > 0 && len(r.gbefores) > 0 {
+		hstmp := make([]Handler, len(r.gbefores))
+		copy(hstmp, newHandlers(r.gbefores))
+
+		hstmp = append(hstmp, o.NoFoundHandlers...)
+		o.NoFoundHandlers = hstmp
+	}
+
 	rs := newRouteStore()
 
 	dumpRoute(r, rs)
+
+	// if len(rs.routeSlice) == 0 {
+	// 	panic("no route: Handler()")
+	// }
 
 	// check uri
 	for _, v := range rs.routeSlice {
@@ -274,9 +315,14 @@ func (r *Router) Handler(opts ...Option) *Engine {
 	}
 
 	w := newWater()
+
 	w.rootRouter = r
 	w.routeStore = rs
 	w.options = o
+
+	defaultMultipartMemory = w.options.MaxMultipartMemory
+	binding.SetMultipartMemory(defaultMultipartMemory)
+
 	w.buildTree()
 
 	return w
@@ -302,7 +348,7 @@ func _VariantUri(raw string) string {
 }
 
 func (r *Router) Classic() {
-	if r.parent != nil {
+	if !r.IsParent() {
 		panic("sub router not allowed : Classic()")
 	}
 

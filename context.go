@@ -20,21 +20,14 @@ type Context struct {
 
 	handlers       []Handler
 	handlersLength int
-	index          int
+	// --- follow need reset
+	index int
 
 	written bool
 	status  int
 
-	endNode *node // matched route node
-
+	endNode      *node // matched route node
 	parsedParams bool
-}
-
-type ResponseWriter interface {
-	http.ResponseWriter
-	//http.CloseNotifier
-	//http.Flusher
-	//http.Hijacker
 }
 
 func newContext() *Context {
@@ -48,6 +41,7 @@ func (ctx *Context) reset() {
 	ctx.status = 0
 
 	ctx.endNode = nil
+	ctx.parsedParams = false
 }
 
 func (ctx *Context) Next() {

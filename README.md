@@ -136,6 +136,10 @@ There are already some middlewares to simplify your work:
 ## binding
 support gin style binding.
 
+## others
+- support http.Handler, but not recommended
+- `go build --tags extended`, enable advanced response
+
 ## Getting Help
 
 - [API Reference](https://gowalker.org/github.com/meilihao/water)
