@@ -71,3 +71,10 @@ func (c *Context) Get(name string) interface{} {
 	}
 	panic("Environ not exist: " + name)
 }
+
+// GetMaybe returns the value for the given name, ie: (value, true).
+// If the value does not exists it returns (nil, false)
+func (c *Context) GetMaybe(name string) (value interface{}, exists bool) {
+	value, exists = c.Environ[name]
+	return
+}
